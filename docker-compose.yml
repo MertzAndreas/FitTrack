@@ -1,0 +1,14 @@
+services:
+  fittrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fittrack
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DB_PATH=/data/fittrack.db

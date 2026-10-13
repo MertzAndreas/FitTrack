@@ -1,0 +1,30 @@
+# --- Build & Runtime Artifacts (.NET / C#) ---
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+Generated_Code/
+.vs/
+
+# --- Dependencies & Package Managers (Node / pnpm) ---
+node_modules/
+.pnpm-store/
+dist/
+dist-ssr/
+*.local
+
+# --- Databases & Persistent Storage ---
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# --- Environment & Secret Configuration ---
+.env
+.env.*
+!.env.example
