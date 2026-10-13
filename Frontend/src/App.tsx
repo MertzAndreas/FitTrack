@@ -1,15 +1,22 @@
-import PWABadge from './PWABadge.tsx'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { AppLayout } from '@/components/app-layout'
+import { OverviewPage } from '@/pages/overview'
+import { MealsPage } from '@/pages/meals'
+import { WeightPage } from '@/pages/weight'
+import { SettingsPage } from '@/pages/settings'
 
 function App() {
   return (
-    <>
-      <header className="flex items-center justify-between p-4">
-        <h1 className="text-2xl font-heading">FitTrack</h1>
-        <ThemeToggle />
-      </header>
-      <PWABadge />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route index element={<OverviewPage />} />
+          <Route path="meals" element={<MealsPage />} />
+          <Route path="weight" element={<WeightPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
