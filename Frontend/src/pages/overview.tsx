@@ -1,8 +1,9 @@
-import { ChevronLeft, ChevronRight, Scale, TrendingDown, TrendingUp } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Hamburger, Scale, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from 'cn'
 import { KcalRing } from '@/components/kcal-ring'
 import { MacroProgress } from '@/components/macro-progress'
+import { MealList } from '@/components/meal-list'
 import { MonthGrid } from '@/components/month-grid'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,59 +14,142 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { createBlock, createItem, sumBlocks, foods, type MealBlock } from '@/lib/meals'
+
+// Builds a block from (foodId, amount) pairs, so the mock stays readable.
+const block = (name: string, items: [string, number][]) =>
+  createBlock(
+    name,
+    items.map(([foodId, amount]) => createItem(foodId, amount))
+  )
 
 // Mock data — replace with real user data. One entry per day, newest last.
-const days = [
-  {
-    date: '2026-10-09',
-    kcal: { consumed: 1980, goal: 2100 },
-    weight: { current: 78.9, change: -0.2, unit: 'kg' },
-    macros: [
-      { label: 'Protein', consumed: 152, goal: 160, unit: 'g' },
-      { label: 'Carbs', consumed: 191, goal: 230, unit: 'g' },
-      { label: 'Fat', consumed: 61, goal: 70, unit: 'g' },
-    ],
-  },
-  {
-    date: '2026-10-10',
-    kcal: { consumed: 2240, goal: 2100 },
-    weight: { current: 78.7, change: -0.2, unit: 'kg' },
-    macros: [
-      { label: 'Protein', consumed: 143, goal: 160, unit: 'g' },
-      { label: 'Carbs', consumed: 248, goal: 230, unit: 'g' },
-      { label: 'Fat', consumed: 74, goal: 70, unit: 'g' },
-    ],
-  },
-  {
-    date: '2026-10-11',
-    kcal: { consumed: 2050, goal: 2100 },
-    weight: { current: 78.6, change: -0.1, unit: 'kg' },
-    macros: [
-      { label: 'Protein', consumed: 158, goal: 160, unit: 'g' },
-      { label: 'Carbs', consumed: 205, goal: 230, unit: 'g' },
-      { label: 'Fat', consumed: 65, goal: 70, unit: 'g' },
-    ],
-  },
-  {
-    date: '2026-10-12',
-    kcal: { consumed: 2680, goal: 2100 },
-    weight: { current: 78.5, change: -0.1, unit: 'kg' },
-    macros: [
-      { label: 'Protein', consumed: 136, goal: 160, unit: 'g' },
-      { label: 'Carbs', consumed: 294, goal: 230, unit: 'g' },
-      { label: 'Fat', consumed: 88, goal: 70, unit: 'g' },
-    ],
-  },
-  {
-    date: '2026-10-13',
-    kcal: { consumed: 2300, goal: 2100 },
-    weight: { current: 78.4, change: -0.1, unit: 'kg' },
-    macros: [
-      { label: 'Protein', consumed: 148, goal: 160, unit: 'g' },
-      { label: 'Carbs', consumed: 262, goal: 230, unit: 'g' },
-      { label: 'Fat', consumed: 71, goal: 70, unit: 'g' },
-    ],
-  },
+// Kcal totals are derived from the meal blocks rather than stored.
+const days: {
+  date: string
+  weight: { current: number; change: number; unit: string }
+  meals: MealBlock[]
+}[] = [
+    {
+      date: '2026-10-09',
+      weight: { current: 78.9, change: -0.2, unit: 'kg' },
+      meals: [
+        block('Breakfast', [
+          ['oats', 80],
+          ['milk', 200],
+        ]),
+        block('Lunch', [
+          ['chicken', 150],
+          ['rice', 180],
+          ['broccoli', 100],
+        ]),
+        block('Dinner', [
+          ['salmon', 150],
+          ['potato', 200],
+        ]),
+        block('Snacks', [
+          ['protein-shake', 250],
+          ['apple', 120],
+        ]),
+      ],
+    },
+    {
+      date: '2026-10-10',
+      weight: { current: 78.7, change: -0.2, unit: 'kg' },
+      meals: [
+        block('Breakfast', [
+          ['egg', 120],
+          ['bread', 70],
+          ['coffee', 200],
+        ]),
+        block('Lunch', [
+          ['chicken', 120],
+          ['pasta', 200],
+          ['olive-oil', 10],
+        ]),
+        block('Dinner', [
+          ['beef', 180],
+          ['rice', 200],
+        ]),
+        block('Snacks', [
+          ['nuts', 40],
+          ['banana', 120],
+        ]),
+      ],
+    },
+    {
+      date: '2026-10-11',
+      weight: { current: 78.6, change: -0.1, unit: 'kg' },
+      meals: [
+        block('Breakfast', [
+          ['yoghurt', 200],
+          ['oats', 50],
+        ]),
+        block('Lunch', [
+          ['chicken', 150],
+          ['rice', 200],
+          ['banana', 100],
+        ]),
+        block('Dinner', [
+          ['pasta', 250],
+          ['beef', 100],
+        ]),
+        block('Snacks', [['chocolate', 25]]),
+      ],
+    },
+    {
+      date: '2026-10-12',
+      weight: { current: 78.5, change: -0.1, unit: 'kg' },
+      meals: [
+        block('Breakfast', [
+          ['bread', 120],
+          ['egg', 100],
+          ['peanut-butter', 30],
+        ]),
+        block('Lunch', [
+          ['beef', 220],
+          ['potato', 250],
+          ['olive-oil', 15],
+        ]),
+        block('Dinner', [
+          ['pasta', 300],
+          ['chicken', 120],
+        ]),
+        block('Snacks', [['chocolate', 60]]),
+      ],
+    },
+    {
+      date: '2026-10-13',
+      weight: { current: 78.4, change: -0.1, unit: 'kg' },
+      meals: [
+        block('Breakfast', [
+          ['egg', 150],
+          ['bread', 60],
+        ]),
+        block('Lunch', [
+          ['pasta', 200],
+          ['chicken', 130],
+        ]),
+        block('Dinner', [
+          ['chicken', 150],
+          ['potato', 220],
+          ['broccoli', 120],
+        ]),
+        block('Snacks', [
+          ['protein-shake', 300],
+          ['apple', 150],
+        ]),
+      ],
+    },
+  ]
+
+// Macro goals per day (mock). Consumption is derived from the meal blocks.
+const kcalGoal = 2100
+
+const macroGoals: { key: 'protein' | 'carbs' | 'fat'; label: string; goal: number; unit: string }[] = [
+  { key: 'protein', label: 'Protein', goal: 160, unit: 'g' },
+  { key: 'carbs', label: 'Carbs', goal: 230, unit: 'g' },
+  { key: 'fat', label: 'Fat', goal: 70, unit: 'g' },
 ]
 
 // All-time days on target (mock). Cumulative rather than a streak, so a missed
@@ -125,11 +209,26 @@ const formatDate = (iso: string) =>
 
 export function OverviewPage() {
   const [index, setIndex] = useState(days.length - 1)
+  // Editable meal blocks for the visible day, seeded from the mock.
+  const [mealsByDay, setMealsByDay] = useState<Record<string, MealBlock[]>>(() =>
+    Object.fromEntries(days.map((d) => [d.date, d.meals]))
+  )
 
   const day = days[index]
-  const { kcal, weight, macros } = day
-  const isOver = kcal.consumed > kcal.goal
+  const weight = day.weight
+  const meals = mealsByDay[day.date] ?? []
+  const dayTotals = sumBlocks(meals)
+  const consumed = dayTotals.kcal
+  const isOver = consumed > kcalGoal
   const isToday = index === days.length - 1
+
+  // Real macros, derived from the foods and amounts in the meal blocks.
+  const macros = macroGoals.map(({ key, label, goal, unit }) => ({
+    label,
+    goal,
+    unit,
+    consumed: Math.round(dayTotals[key]),
+  }))
 
   const monthCounts = Object.values(monthStatuses)
   const monthStats = {
@@ -138,39 +237,41 @@ export function OverviewPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
+    <div className="mx-auto w-full max-w-2xl space-y-5 sm:space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-heading">Overview</h1>
-        <p className="text-muted-foreground">Your daily fitness summary.</p>
+        <p className="text-sm text-muted-foreground">Your daily fitness summary.</p>
       </div>
 
-      <Card>
+      <Card size="sm">
         <CardHeader className="items-center pb-0 text-center">
-          <div className="flex w-full items-center justify-between">
+          <div className="flex w-full items-center justify-between gap-2">
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon-lg"
               onClick={() => setIndex((i) => Math.max(i - 1, 0))}
               disabled={index === 0}
               aria-label="Previous day"
             >
               <ChevronLeft />
             </Button>
-            <div className="space-y-1">
-              <CardTitle>
+            <div className="min-w-0 space-y-1">
+              <CardTitle className="truncate">
                 {isToday ? 'Today' : formatDate(day.date)}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="truncate">
                 {isToday
                   ? isOver
-                    ? 'You are over your calorie goal'
-                    : 'On track for today'
-                  : formatDate(day.date)}
+                    ? 'Over your calorie goal'
+                    : 'On track'
+                  : isOver
+                    ? 'Over goal'
+                    : 'On track'}
               </CardDescription>
             </div>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon-lg"
               onClick={() => setIndex((i) => Math.min(i + 1, days.length - 1))}
               disabled={isToday}
               aria-label="Next day"
@@ -180,20 +281,23 @@ export function OverviewPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          <KcalRing consumed={kcal.consumed} goal={kcal.goal} />
+        <CardContent className="space-y-6 pt-4">
+          <KcalRing consumed={consumed} goal={kcalGoal} />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card size="sm" className="bg-muted/40 shadow-none ring-0">
-              <CardHeader>
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+            <Card
+              size="sm"
+              className="bg-muted/40 shadow-none ring-0 [--card-spacing:0px]"
+            >
+              <CardHeader className="p-3 pb-2">
                 <CardDescription className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase">
                   <Scale className="size-3.5" />
                   Weight
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-1">
+              <CardContent className="space-y-1 p-3 pt-0">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-bold tabular-nums">
+                  <span className="font-heading text-2xl tabular-nums">
                     {weight.current}
                   </span>
                   <span className="text-sm text-muted-foreground">
@@ -218,13 +322,17 @@ export function OverviewPage() {
               </CardContent>
             </Card>
 
-            <Card size="sm" className="bg-muted/40 shadow-none ring-0">
-              <CardHeader>
-                <CardDescription className="text-xs font-semibold tracking-widest uppercase">
+            <Card
+              size="sm"
+              className="bg-muted/40 shadow-none ring-0 [--card-spacing:0px]"
+            >
+              <CardHeader className="p-3 pb-2">
+                <CardDescription className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase">
+                  <Hamburger className="size-3.5" />
                   Macros
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 <MacroProgress macros={macros} />
               </CardContent>
             </Card>
@@ -262,6 +370,14 @@ export function OverviewPage() {
           </div>
         </CardFooter>
       </Card>
+
+      <MealList
+        blocks={meals}
+        foods={foods}
+        onChange={(blocks) =>
+          setMealsByDay((prev) => ({ ...prev, [day.date]: blocks }))
+        }
+      />
     </div>
   )
 }

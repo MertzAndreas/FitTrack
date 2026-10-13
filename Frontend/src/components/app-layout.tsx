@@ -15,7 +15,7 @@ export function AppLayout() {
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="flex-1 p-4 pb-20 md:pb-4">
+        <main className="flex-1 px-4 py-5 pb-24 md:px-6 md:pb-6">
           <Outlet />
         </main>
         <BottomNav />
