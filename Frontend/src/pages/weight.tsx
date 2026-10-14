@@ -24,22 +24,25 @@ import {
   granularityLabel,
   rangeLabel,
   rollingAverage,
+  visiblePhases,
   type Granularity,
   type WeightRange,
 } from '@/lib/weight-chart'
 import {
   onTrack,
+  weeksToTarget,
+  type OnTrackVerdict,
+  type RecentRate,
+} from '@/lib/weight-projection'
+import {
   phaseDirectionLabels,
   phaseSummary,
-  visiblePhases,
-  weeksToTarget,
   type GoalProgress,
-  type OnTrackVerdict,
   type Phase,
   type PhaseDirection,
-  type RecentRate,
-} from '@/lib/weight-goals'
-import { daysSinceLastEntry, isoToday, upsertEntry, type WeightEntry } from '@/lib/weight'
+} from '@/lib/weight-phase'
+import { daysSinceLastEntry, upsertEntry, type WeightEntry } from '@/lib/weight'
+import { today } from '@/lib/weight-dates'
 import { seedEntries, seedPhases } from '@/lib/weight-seed'
 
 export function WeightPage() {
@@ -87,7 +90,7 @@ export function WeightPage() {
   const streak = consistency(entries)
   // Days since the last log, against the real date. Used to nudge when logging
   // has lapsed; the mock's latest entry is recent enough not to fire by default.
-  const daysSinceLog = daysSinceLastEntry(entries, isoToday())
+  const daysSinceLog = daysSinceLastEntry(entries, today())
   // The smoothed line only makes sense over daily points; coarser buckets are
   // already averages.
   const showAverage = activeGranularity === 'day'

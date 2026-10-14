@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type { Measurements, PhotoDraft } from '@/lib/weight'
-import { measurementFields, toIso } from '@/lib/weight'
+import { measurementFields } from '@/lib/weight'
+import { formatDay } from '@/lib/weight-dates'
 
 export type WeightFormValues = {
   date: string
@@ -94,7 +95,7 @@ export function WeightFields({
                 defaultMonth={selectedDate}
                 onSelect={(day) => {
                   if (!day) return
-                  patch({ date: toIso(day) })
+                  patch({ date: formatDay(day) })
                   setDateOpen(false)
                 }}
               />

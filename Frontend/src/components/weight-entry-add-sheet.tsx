@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
-import { newId, isoToday, type WeightEntry } from '@/lib/weight'
+import { newId, type WeightEntry } from '@/lib/weight'
+import { today } from '@/lib/weight-dates'
 import { WeightFields, type WeightFormValues } from '@/components/weight-fields'
 
 type WeightEntryAddSheetProps = {
@@ -11,7 +12,7 @@ type WeightEntryAddSheetProps = {
 }
 
 const emptyValues = (): WeightFormValues => ({
-  date: isoToday(),
+  date: today(),
   weight: 0,
   measurements: {},
   photos: [],

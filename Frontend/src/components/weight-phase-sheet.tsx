@@ -11,8 +11,9 @@ import {
   validatePhaseTarget,
   weightAt,
   type Phase,
-} from '@/lib/weight-goals'
-import { newId, toIso, type WeightEntry } from '@/lib/weight'
+} from '@/lib/weight-phase'
+import { newId, type WeightEntry } from '@/lib/weight'
+import { formatDay } from '@/lib/weight-dates'
 
 type WeightPhaseSheetProps = {
   open: boolean
@@ -41,7 +42,7 @@ export function WeightPhaseSheet({
 }: WeightPhaseSheetProps) {
   const latest = entries.at(-1)
 
-  const [startDate, setStartDate] = useState(toIso(new Date()))
+  const [startDate, setStartDate] = useState(formatDay(new Date()))
   const [target, setTarget] = useState<number | undefined>(undefined)
   const [rate, setRate] = useState<number | undefined>(undefined)
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
@@ -64,7 +65,7 @@ export function WeightPhaseSheet({
       setTargetDate(phase.targetDate)
       return
     }
-    setStartDate(latest?.date ?? toIso(new Date()))
+    setStartDate(latest?.date ?? formatDay(new Date()))
     setTarget(undefined)
     setRate(undefined)
     setTargetDate(undefined)
@@ -170,7 +171,7 @@ export function WeightPhaseSheet({
                     defaultMonth={new Date(`${startDate}T00:00:00`)}
                     onSelect={(day) => {
                       if (!day) return
-                      setStartDate(toIso(day))
+                      setStartDate(formatDay(day))
                       setDateOpen(false)
                     }}
                   />
@@ -239,7 +240,7 @@ export function WeightPhaseSheet({
                       }
                       onSelect={(day) => {
                         if (!day) return
-                        setTargetDate(toIso(day))
+                        setTargetDate(formatDay(day))
                         setTargetDateOpen(false)
                       }}
                     />

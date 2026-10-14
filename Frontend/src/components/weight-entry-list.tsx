@@ -2,13 +2,13 @@ import { CalendarRange, TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import {
-  groupEntriesByPhase,
   phaseDirection,
   phaseDirectionLabels,
   phaseEnd,
   weightMoveSentiment,
   type Phase,
-} from '@/lib/weight-goals'
+} from '@/lib/weight-phase'
+import { groupEntriesByPhase } from '@/lib/weight-chart'
 import { measurementFields, type WeightEntry } from '@/lib/weight'
 
 type WeightEntryListProps = {

@@ -13,7 +13,7 @@ import {
   type Granularity,
   type WeightRange,
 } from '@/lib/weight-chart'
-import { toIso } from '@/lib/weight'
+import { formatDay } from '@/lib/weight-dates'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
 
 type WeightRangePickerProps = {
@@ -51,8 +51,8 @@ export function WeightRangePicker({
   const apply = () => {
     if (!draft?.from) return
     onChange({
-      from: toIso(draft.from),
-      to: toIso(draft.to ?? draft.from),
+      from: formatDay(draft.from),
+      to: formatDay(draft.to ?? draft.from),
     })
     setOpen(false)
   }
@@ -119,8 +119,8 @@ export function WeightRangePicker({
               <span className="truncate text-xs text-muted-foreground">
                 {draft?.from && draft?.to
                   ? `${rangeLabel({
-                      from: toIso(draft.from),
-                      to: toIso(draft.to),
+                      from: formatDay(draft.from),
+                      to: formatDay(draft.to),
                     })}`
                   : 'Pick a start and end date'}
               </span>

@@ -13,7 +13,8 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import type { ChartPoint, Granularity } from '@/lib/weight-chart'
-import type { PhaseDirection, VisiblePhase } from '@/lib/weight-goals'
+import type { PhaseDirection } from '@/lib/weight-phase'
+import type { VisiblePhase } from '@/lib/weight-chart'
 
 const chartConfig = {
   weight: { label: 'Weight', color: 'var(--chart-1, var(--primary))' },

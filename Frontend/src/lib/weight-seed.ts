@@ -1,5 +1,5 @@
 import { newId, sortEntries, type WeightEntry } from '@/lib/weight'
-import type { Phase } from '@/lib/weight-goals'
+import type { Phase } from '@/lib/weight-phase'
 
 /**
  * Mock data for the weight page, in one place so it is easy to delete once the
