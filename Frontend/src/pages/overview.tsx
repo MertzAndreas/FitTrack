@@ -304,13 +304,7 @@ export function OverviewPage() {
                     {weight.unit}
                   </span>
                 </div>
-                <div
-                  className={
-                    weight.change < 0
-                      ? 'flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-500'
-                      : 'flex items-center gap-1 text-xs font-medium text-destructive'
-                  }
-                >
+                <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   {weight.change < 0 ? (
                     <TrendingDown className="size-3.5" />
                   ) : (
