@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react'
+import { MicroLabel } from '@/components/micro-label'
 
 type NumberFieldProps = {
   id: string
@@ -45,9 +46,7 @@ export function NumberField({
 
   return (
     <label htmlFor={id} className="block space-y-1.5">
-      <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-        {label}
-      </span>
+      <MicroLabel>{label}</MicroLabel>
       <span className="flex items-baseline gap-2 border border-border bg-muted/30 px-3 py-2">
         <input
           id={id}

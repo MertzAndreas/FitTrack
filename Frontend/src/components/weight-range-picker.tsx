@@ -1,6 +1,7 @@
 import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from 'cn'
+import { MicroLabel } from '@/components/micro-label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -135,9 +136,7 @@ export function WeightRangePicker({
       {/* The aggregation override. A single option means no choice to make. */}
       {granularities.length > 1 ? (
         <div className="flex items-center gap-2">
-          <span className="text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-            Show
-          </span>
+          <MicroLabel size="hint">Show</MicroLabel>
           <ToggleGroup
             value={[granularity]}
             onValueChange={(next: string[]) => {

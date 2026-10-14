@@ -5,19 +5,16 @@
  * page is left with state and composition only.
  */
 import {
-  availableGranularities,
   bucketEntries,
   consistency,
-  defaultGranularity,
   filterByRange,
+  granularitiesFor,
   granularityLabel,
   rangeLabel,
   rollingAverage,
-  visiblePhases,
   type ChartPoint,
   type Consistency,
   type Granularity,
-  type VisiblePhase,
   type WeightRange,
 } from '@/lib/weight-chart'
 import {
@@ -26,7 +23,14 @@ import {
   type OnTrackVerdict,
   type RecentRate,
 } from '@/lib/weight-projection'
-import { phaseSummary, type GoalProgress, type Phase, type PhaseDirection } from '@/lib/weight-phase'
+import {
+  phaseSummary,
+  visiblePhases,
+  type GoalProgress,
+  type Phase,
+  type PhaseDirection,
+  type VisiblePhase,
+} from '@/lib/weight-phase'
 import type { WeightEntry } from '@/lib/weight'
 
 /** Everything the weight page needs, derived in one pass. */
@@ -71,11 +75,11 @@ export function summariseWeightPage(
   daysSinceLog: number | undefined
 ): WeightView {
   const rangedEntries = filterByRange(entries, range)
-  const granularities = availableGranularities(rangedEntries, range)
+  const { offered: granularities, initial } = granularitiesFor(rangedEntries, range)
   // Guard against a stored granularity the current range no longer offers.
   const activeGranularity = granularities.includes(granularity)
     ? granularity
-    : granularities[0]
+    : initial
 
   const points = bucketEntries(rangedEntries, activeGranularity, range)
   const latest = entries.at(-1)
@@ -130,5 +134,5 @@ export function initialGranularity(
   entries: WeightEntry[],
   range: WeightRange
 ): Granularity {
-  return defaultGranularity(filterByRange(entries, range), range)
+  return granularitiesFor(filterByRange(entries, range), range).initial
 }

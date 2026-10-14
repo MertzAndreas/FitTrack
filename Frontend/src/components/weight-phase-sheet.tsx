@@ -1,10 +1,9 @@
-import { CalendarIcon, Trash2, X } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { DateField } from '@/components/date-field'
 import { NumberField } from '@/components/number-field'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   MAINTAIN_TOLERANCE,
   phaseDirectionLabels,
@@ -25,13 +24,6 @@ type WeightPhaseSheetProps = {
   onDelete: (id: string) => void
 }
 
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-
 export function WeightPhaseSheet({
   open,
   onOpenChange,
@@ -46,8 +38,6 @@ export function WeightPhaseSheet({
   const [target, setTarget] = useState<number | undefined>(undefined)
   const [rate, setRate] = useState<number | undefined>(undefined)
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
-  const [dateOpen, setDateOpen] = useState(false)
-  const [targetDateOpen, setTargetDateOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const targetRef = useRef<HTMLInputElement>(null)
 
@@ -55,8 +45,6 @@ export function WeightPhaseSheet({
   useEffect(() => {
     if (!open) return
     setConfirmDelete(false)
-    setDateOpen(false)
-    setTargetDateOpen(false)
     if (phase) {
       setStartDate(phase.startDate)
       setTarget(phase.targetWeight)
@@ -147,36 +135,12 @@ export function WeightPhaseSheet({
             }}
           >
             <div className="space-y-1.5">
-              <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-                Starts
-              </span>
-              <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-auto w-full justify-start gap-2 px-3 py-2 text-sm font-normal normal-case"
-                      aria-label="Pick a start date"
-                    />
-                  }
-                >
-                  <CalendarIcon className="size-3.5 shrink-0" />
-                  <span className="truncate">{formatDate(startDate)}</span>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date(`${startDate}T00:00:00`)}
-                    defaultMonth={new Date(`${startDate}T00:00:00`)}
-                    onSelect={(day) => {
-                      if (!day) return
-                      setStartDate(formatDay(day))
-                      setDateOpen(false)
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+              <DateField
+                label="Starts"
+                value={startDate}
+                onChange={setStartDate}
+                ariaLabel="Pick a start date"
+              />
               {startWeight !== undefined ? (
                 <p className="text-xs text-muted-foreground tabular-nums">
                   Starting from {startWeight} kg
@@ -202,64 +166,15 @@ export function WeightPhaseSheet({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-                Target date (optional)
-              </span>
-              <div className="flex items-center gap-2">
-                <Popover open={targetDateOpen} onOpenChange={setTargetDateOpen}>
-                  <PopoverTrigger
-                    render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-auto flex-1 justify-start gap-2 px-3 py-2 text-sm font-normal normal-case"
-                        aria-label="Pick a target date"
-                      />
-                    }
-                  >
-                    <CalendarIcon className="size-3.5 shrink-0" />
-                    <span className="truncate">
-                      {targetDate
-                        ? formatDate(targetDate)
-                        : 'No deadline'}
-                    </span>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={
-                        targetDate
-                          ? new Date(`${targetDate}T00:00:00`)
-                          : undefined
-                      }
-                      defaultMonth={
-                        targetDate
-                          ? new Date(`${targetDate}T00:00:00`)
-                          : undefined
-                      }
-                      onSelect={(day) => {
-                        if (!day) return
-                        setTargetDate(formatDay(day))
-                        setTargetDateOpen(false)
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {targetDate ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Clear target date"
-                    title="Clear target date"
-                    onClick={() => setTargetDate(undefined)}
-                  >
-                    <X />
-                  </Button>
-                ) : null}
-              </div>
-            </div>
+            <DateField
+              label="Target date (optional)"
+              value={targetDate}
+              onChange={setTargetDate}
+              ariaLabel="Pick a target date"
+              placeholder="No deadline"
+              onClear={() => setTargetDate(undefined)}
+              clearLabel="Clear target date"
+            />
 
             {targetProblem ? (
               <p className="text-xs text-destructive">{targetProblem}</p>

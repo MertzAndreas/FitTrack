@@ -1,14 +1,15 @@
 import { CalendarRange, TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from 'cn'
+import { MicroLabel } from '@/components/micro-label'
 import { Button } from '@/components/ui/button'
 import {
+  groupEntriesByPhase,
   phaseDirection,
   phaseDirectionLabels,
   phaseEnd,
   weightMoveSentiment,
   type Phase,
 } from '@/lib/weight-phase'
-import { groupEntriesByPhase } from '@/lib/weight-chart'
 import { measurementFields, type WeightEntry } from '@/lib/weight'
 
 type WeightEntryListProps = {
@@ -66,11 +67,11 @@ export function WeightEntryList({
           className="space-y-2"
         >
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            <MicroLabel as="h3" size="base">
               {group.phase
                 ? `${phaseDirectionLabels[directions.get(group.phase.id) ?? 'maintain']} · to ${group.phase.targetWeight} kg`
                 : 'Before phases'}
-            </h3>
+            </MicroLabel>
             <span className="text-xs text-muted-foreground tabular-nums">
               {formatMonth(group.entries[0].date)}
               {group.entries.length > 1

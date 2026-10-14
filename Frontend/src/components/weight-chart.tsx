@@ -13,8 +13,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import type { ChartPoint, Granularity } from '@/lib/weight-chart'
-import type { PhaseDirection } from '@/lib/weight-phase'
-import type { VisiblePhase } from '@/lib/weight-chart'
+import type { PhaseDirection, VisiblePhase } from '@/lib/weight-phase'
 
 const chartConfig = {
   weight: { label: 'Weight', color: 'var(--chart-1, var(--primary))' },
@@ -49,7 +48,6 @@ const formatters: Record<Granularity, (iso: string) => string> = {
       month: 'short',
       year: 'numeric',
     }),
-  year: (iso) => String(new Date(`${iso}T00:00:00`).getFullYear()),
 }
 
 /**

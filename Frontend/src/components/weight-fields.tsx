@@ -1,13 +1,11 @@
-import { CalendarIcon, ImagePlus, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ImagePlus, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { cn } from 'cn'
+import { DateField } from '@/components/date-field'
+import { MicroLabel } from '@/components/micro-label'
 import { NumberField } from '@/components/number-field'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type { Measurements, PhotoDraft } from '@/lib/weight'
 import { measurementFields } from '@/lib/weight'
-import { formatDay } from '@/lib/weight-dates'
 
 export type WeightFormValues = {
   date: string
@@ -44,9 +42,7 @@ export function WeightFields({
   onAddPhotos,
   focusWeight,
 }: WeightFieldsProps) {
-  const [dateOpen, setDateOpen] = useState(false)
   const weightRef = useRef<HTMLInputElement>(null)
-  const selectedDate = new Date(`${values.date}T00:00:00`)
 
   // Focus once the drawer has settled; autoFocus races the open animation.
   useEffect(() => {
@@ -70,38 +66,12 @@ export function WeightFields({
       className="space-y-5"
     >
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-            Date
-          </span>
-          <Popover open={dateOpen} onOpenChange={setDateOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-auto w-full justify-start gap-2 px-3 py-2 text-sm font-normal normal-case"
-                  aria-label="Pick a date"
-                />
-              }
-            >
-              <CalendarIcon className="size-3.5 shrink-0" />
-              <span className="truncate">{formatDate(values.date)}</span>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                defaultMonth={selectedDate}
-                onSelect={(day) => {
-                  if (!day) return
-                  patch({ date: formatDay(day) })
-                  setDateOpen(false)
-                }}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        <DateField
+          label="Date"
+          value={values.date}
+          onChange={(date) => patch({ date })}
+          formatDate={formatDate}
+        />
 
         <NumberField
           id="weight-value"
@@ -115,9 +85,7 @@ export function WeightFields({
       </div>
 
       <div className="space-y-2">
-        <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-          Measurements
-        </span>
+        <MicroLabel>Measurements</MicroLabel>
         <div className="grid grid-cols-2 gap-3">
           {measurementFields.map((field) => (
             <NumberField
@@ -134,9 +102,7 @@ export function WeightFields({
       </div>
 
       <div className="space-y-2">
-        <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground uppercase">
-          Photos
-        </span>
+        <MicroLabel>Photos</MicroLabel>
         <div className="flex flex-wrap gap-2">
           {values.photos.map((photo) => (
             <div

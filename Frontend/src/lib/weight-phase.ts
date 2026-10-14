@@ -1,6 +1,6 @@
 /**
- * Goals as sequential phases: what each phase targets and which entries belong
- * to it.
+ * Goals as sequential phases: what each phase targets, which entries belong to
+ * it, and how entries and chart bands are grouped under phases.
  *
  * A phase is deliberately minimal — there is no stored "kind". Whether it is a
  * cut, a bulk or a maintain is a *consequence* of its target against the weight
@@ -281,4 +281,80 @@ export function phaseSummary(
     progress,
     rate: recentRate(entries),
   }
+}
+
+/** A run of entries belonging to one phase, or to none. */
+export type EntryGroup = {
+  /** The phase these entries fall under, or undefined before the first one. */
+  phase?: Phase
+  entries: WeightEntry[]
+}
+
+/**
+ * Splits entries into groups by phase, oldest group first. Each entry belongs
+ * to the phase active on its date, so overlapping or back-filled phases are
+ * resolved the same way the header resolves them — the latest phase that has
+ * started wins. Entries before any phase fall into a leading phase-less group.
+ */
+export function groupEntriesByPhase(
+  entries: WeightEntry[],
+  phases: Phase[]
+): EntryGroup[] {
+  if (entries.length === 0) return []
+
+  const groups: EntryGroup[] = []
+  for (const entry of entries) {
+    const phase = activePhase(phases, entry.date)
+    const last = groups.at(-1)
+    // Extend the current group when it's the same phase, else start a new one.
+    if (last && last.phase?.id === phase?.id) last.entries.push(entry)
+    else groups.push({ phase, entries: [entry] })
+  }
+
+  return groups
+}
+
+/** A phase clipped to a visible window, ready for the chart to draw. */
+export type VisiblePhase = {
+  direction: PhaseDirection
+  startDate: string
+  endDate: string
+  targetWeight: number
+}
+
+/**
+ * The phases overlapping a visible window, clipped to the *categories actually
+ * on the chart* — the bucket dates — rather than raw phase dates. A categorical
+ * axis can only reference points it renders, so a phase boundary that falls on
+ * a day with no bucket (e.g. mid-week on a weekly view) snaps to the nearest
+ * bucket inside it. Phases with no bucket in the window are dropped.
+ */
+export function visiblePhases(
+  entries: WeightEntry[],
+  phases: Phase[],
+  categories: string[]
+): VisiblePhase[] {
+  if (categories.length === 0) return []
+  const from = categories[0]
+  const to = categories.at(-1)!
+
+  return phases.flatMap((phase) => {
+    const end = phaseEnd(phases, phase, entries)
+    if (end === undefined) return []
+
+    // Snap to buckets whose date lies inside the phase and the window.
+    const inWindow = categories.filter(
+      (c) => c >= phase.startDate && c <= end && c >= from && c <= to
+    )
+    if (inWindow.length === 0) return []
+
+    return [
+      {
+        direction: phaseDirection(entries, phase),
+        startDate: inWindow[0],
+        endDate: inWindow.at(-1)!,
+        targetWeight: phase.targetWeight,
+      },
+    ]
+  })
 }

@@ -1,5 +1,6 @@
 import { Flag, Pencil, Plus } from 'lucide-react'
 import { cn } from 'cn'
+import { MicroLabel } from '@/components/micro-label'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import {
@@ -110,9 +111,7 @@ function Stat({
 }) {
   return (
     <div className="border border-border bg-muted/30 px-3 py-2">
-      <div className="text-[0.6rem] font-semibold tracking-widest text-muted-foreground uppercase">
-        {label}
-      </div>
+      <MicroLabel size="xs">{label}</MicroLabel>
       <div className="font-heading text-lg leading-tight tabular-nums">
         {value}
       </div>
