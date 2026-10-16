@@ -6,7 +6,8 @@ namespace FitTrack.Data;
 public class FitTrackDbContext(DbContextOptions<FitTrackDbContext> options) : DbContext(options)
 {
   public DbSet<Entry> Entries => Set<Entry>();
-  public DbSet<BodyMeasurement> Measurements => Set<BodyMeasurement>();
+  public DbSet<WeightEntry> WeightEntries => Set<WeightEntry>();
+  public DbSet<BodyMeasurement> BodyMeasurements => Set<BodyMeasurement>();
   public DbSet<Photo> Photos => Set<Photo>();
   public DbSet<Food> Foods => Set<Food>();
   public DbSet<MealBlock> MealBlocks => Set<MealBlock>();
@@ -18,8 +19,11 @@ public class FitTrackDbContext(DbContextOptions<FitTrackDbContext> options) : Db
   {
     model.Entity<Entry>(entity => entity.HasIndex(e => e.Date).IsUnique());
 
+    model.Entity<WeightEntry>(entity =>
+        entity.HasIndex(w => w.EntryId).IsUnique());
+
     model.Entity<BodyMeasurement>(entity =>
-        entity.HasIndex(m => new { m.EntryId, m.Kind }).IsUnique());
+        entity.HasIndex(m => new { m.WeightEntryId, m.Kind }).IsUnique());
 
     model.Entity<Food>(entity =>
     {

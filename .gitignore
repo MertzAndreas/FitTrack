@@ -28,3 +28,9 @@ data/
 .env
 .env.*
 !.env.example
+
+# --- End-to-end tests ---
+Backend/wwwroot/
+Frontend/.e2e-data/
+Frontend/playwright-report/
+Frontend/test-results/

@@ -15,23 +15,33 @@ export type Measurements = {
   thigh?: number
 }
 
-/** One weight entry per day. Photos are in-memory previews (object URLs). */
+/** A photo already saved on the server. */
+export type EntryPhoto = {
+  id: number
+  url: string
+}
+
+/** One weight entry per day. */
 export type WeightEntry = {
+  /** The date; entries are unique per day, so it doubles as the id. */
   id: string
-  /** ISO date (YYYY-MM-DD). Unique across entries. */
+  /** ISO date (YYYY-MM-DD). */
   date: string
   weight: number
   measurements: Measurements
-  /** Object URLs for locally picked photos. Not persisted. */
-  photos: string[]
+  photos: EntryPhoto[]
 }
 
-/** A single photo preview carried through the add/edit sheets. */
+/** A photo in the add/edit form: either a new pick or one already saved. */
 export type PhotoDraft = {
   id: string
-  /** Object URL created from the picked file. */
+  /** Preview: an object URL for a new pick, the server URL for a saved photo. */
   url: string
   name: string
+  /** The picked file; null once the photo is on the server. */
+  file: File | null
+  /** The server id, or null until the photo has been uploaded. */
+  photoId: number | null
 }
 
 let counter = 0

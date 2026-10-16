@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
-import { newId, type WeightEntry } from '@/lib/weight'
+import { newId, type PhotoDraft } from '@/lib/weight'
 import { today } from '@/lib/weight-dates'
 import { WeightFields, type WeightFormValues } from '@/components/weight-fields'
 
 type WeightEntryAddSheetProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (entry: WeightEntry) => void
+  onSubmit: (values: WeightFormValues) => void
+  isSaving: boolean
+  error: string | null
 }
 
 const emptyValues = (): WeightFormValues => ({
@@ -22,6 +24,8 @@ export function WeightEntryAddSheet({
   open,
   onOpenChange,
   onSubmit,
+  isSaving,
+  error,
 }: WeightEntryAddSheetProps) {
   const [values, setValues] = useState<WeightFormValues>(emptyValues)
 
@@ -31,10 +35,12 @@ export function WeightEntryAddSheet({
   }, [open])
 
   const addPhotos = (files: FileList) => {
-    const next = Array.from(files).map((file) => ({
+    const next: PhotoDraft[] = Array.from(files).map((file) => ({
       id: newId('photo'),
       url: URL.createObjectURL(file),
       name: file.name,
+      file,
+      photoId: null,
     }))
     setValues((v) => ({ ...v, photos: [...v.photos, ...next] }))
   }
@@ -49,14 +55,7 @@ export function WeightEntryAddSheet({
 
   const confirm = () => {
     if (!values.weight || values.weight <= 0) return
-    onSubmit({
-      id: newId('weight'),
-      date: values.date,
-      weight: values.weight,
-      measurements: values.measurements,
-      photos: values.photos.map((p) => p.url),
-    })
-    onOpenChange(false)
+    onSubmit(values)
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -78,17 +77,25 @@ export function WeightEntryAddSheet({
           <WeightFields
             values={values}
             onChange={setValues}
+            idPrefix="add"
             onSubmit={confirm}
             onAddPhotos={addPhotos}
             onRemovePhoto={(photo) => removePhoto(photo.id)}
             focusWeight={open}
           />
 
+          {error ? (
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+
           <div className="mt-6 flex gap-3">
             <Button
               size="lg"
               variant="secondary"
               onClick={() => handleOpenChange(false)}
+              disabled={isSaving}
             >
               Cancel
             </Button>
@@ -96,9 +103,9 @@ export function WeightEntryAddSheet({
               className="flex-1"
               size="lg"
               onClick={confirm}
-              disabled={!values.weight || values.weight <= 0}
+              disabled={isSaving || !values.weight || values.weight <= 0}
             >
-              Add entry
+              {isSaving ? 'Saving…' : 'Add entry'}
             </Button>
           </div>
         </div>

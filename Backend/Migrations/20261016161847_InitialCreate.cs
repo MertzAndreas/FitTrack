@@ -17,8 +17,7 @@ namespace FitTrack.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Date = table.Column<DateOnly>(type: "TEXT", nullable: false),
-                    WeightKg = table.Column<double>(type: "REAL", nullable: true)
+                    Date = table.Column<DateOnly>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -103,40 +102,19 @@ namespace FitTrack.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Measurements",
+                name: "WeightEntries",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     EntryId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Kind = table.Column<string>(type: "TEXT", nullable: false),
-                    ValueCm = table.Column<double>(type: "REAL", nullable: false)
+                    WeightKg = table.Column<double>(type: "REAL", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Measurements", x => x.Id);
+                    table.PrimaryKey("PK_WeightEntries", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Measurements_Entries_EntryId",
-                        column: x => x.EntryId,
-                        principalTable: "Entries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Photos",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EntryId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Path = table.Column<string>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Photos", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Photos_Entries_EntryId",
+                        name: "FK_WeightEntries_Entries_EntryId",
                         column: x => x.EntryId,
                         principalTable: "Entries",
                         principalColumn: "Id",
@@ -169,6 +147,53 @@ namespace FitTrack.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "BodyMeasurements",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    WeightEntryId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Kind = table.Column<string>(type: "TEXT", nullable: false),
+                    ValueCm = table.Column<double>(type: "REAL", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BodyMeasurements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BodyMeasurements_WeightEntries_WeightEntryId",
+                        column: x => x.WeightEntryId,
+                        principalTable: "WeightEntries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Photos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    WeightEntryId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Path = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Photos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Photos_WeightEntries_WeightEntryId",
+                        column: x => x.WeightEntryId,
+                        principalTable: "WeightEntries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BodyMeasurements_WeightEntryId_Kind",
+                table: "BodyMeasurements",
+                columns: new[] { "WeightEntryId", "Kind" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Entries_Date",
@@ -204,34 +229,34 @@ namespace FitTrack.Migrations
                 column: "FoodId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Measurements_EntryId_Kind",
-                table: "Measurements",
-                columns: new[] { "EntryId", "Kind" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Phases_StartDate",
                 table: "Phases",
                 column: "StartDate",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Photos_EntryId",
+                name: "IX_Photos_WeightEntryId",
                 table: "Photos",
-                column: "EntryId");
+                column: "WeightEntryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WeightEntries_EntryId",
+                table: "WeightEntries",
+                column: "EntryId",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BodyMeasurements");
+
+            migrationBuilder.DropTable(
                 name: "Goals");
 
             migrationBuilder.DropTable(
                 name: "MealItems");
-
-            migrationBuilder.DropTable(
-                name: "Measurements");
 
             migrationBuilder.DropTable(
                 name: "Phases");
@@ -244,6 +269,9 @@ namespace FitTrack.Migrations
 
             migrationBuilder.DropTable(
                 name: "MealBlocks");
+
+            migrationBuilder.DropTable(
+                name: "WeightEntries");
 
             migrationBuilder.DropTable(
                 name: "Entries");

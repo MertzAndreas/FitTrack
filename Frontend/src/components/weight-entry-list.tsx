@@ -159,10 +159,10 @@ export function WeightEntryList({
 
                     {entry.photos.length > 0 ? (
                       <span className="flex shrink-0 gap-1">
-                        {entry.photos.slice(0, 3).map((url, i) => (
+                        {entry.photos.slice(0, 3).map((photo) => (
                           <img
-                            key={`${entry.id}-photo-${i}`}
-                            src={url}
+                            key={photo.id}
+                            src={photo.url}
                             alt=""
                             className="size-10 border border-border object-cover"
                           />

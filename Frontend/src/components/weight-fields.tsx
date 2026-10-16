@@ -1,9 +1,10 @@
 import { ImagePlus, X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from 'cn'
 import { DateField } from '@/components/date-field'
 import { MicroLabel } from '@/components/micro-label'
 import { NumberField } from '@/components/number-field'
+import { PhotoViewer } from '@/components/photo-viewer'
 import type { Measurements, PhotoDraft } from '@/lib/weight'
 import { measurementFields } from '@/lib/weight'
 
@@ -17,6 +18,8 @@ export type WeightFormValues = {
 type WeightFieldsProps = {
   values: WeightFormValues
   onChange: (values: WeightFormValues) => void
+  /** Prefix for the field ids, so the add and edit sheets do not collide. */
+  idPrefix: string
   /** Called when Enter is pressed in a text field. */
   onSubmit?: () => void
   /** Object URLs of photos picked in this session, so they can be revoked. */
@@ -37,12 +40,14 @@ const formatDate = (iso: string) =>
 export function WeightFields({
   values,
   onChange,
+  idPrefix,
   onSubmit,
   onRemovePhoto,
   onAddPhotos,
   focusWeight,
 }: WeightFieldsProps) {
   const weightRef = useRef<HTMLInputElement>(null)
+  const [viewing, setViewing] = useState<number | null>(null)
 
   // Focus once the drawer has settled; autoFocus races the open animation.
   useEffect(() => {
@@ -74,7 +79,7 @@ export function WeightFields({
         />
 
         <NumberField
-          id="weight-value"
+          id={`${idPrefix}-weight`}
           label="Weight"
           unit="kg"
           inputRef={weightRef}
@@ -90,7 +95,7 @@ export function WeightFields({
           {measurementFields.map((field) => (
             <NumberField
               key={field.key}
-              id={`measure-${field.key}`}
+              id={`${idPrefix}-measure-${field.key}`}
               label={field.label}
               unit={field.unit}
               value={values.measurements[field.key]}
@@ -104,16 +109,23 @@ export function WeightFields({
       <div className="space-y-2">
         <MicroLabel>Photos</MicroLabel>
         <div className="flex flex-wrap gap-2">
-          {values.photos.map((photo) => (
+          {values.photos.map((photo, index) => (
             <div
               key={photo.id}
               className="group relative size-20 overflow-hidden border border-border bg-muted"
             >
-              <img
-                src={photo.url}
-                alt={photo.name}
-                className="size-full object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setViewing(index)}
+                aria-label={`View ${photo.name}`}
+                className="block size-full"
+              >
+                <img
+                  src={photo.url}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              </button>
               <button
                 type="button"
                 onClick={() => onRemovePhoto(photo)}
@@ -146,6 +158,15 @@ export function WeightFields({
           </label>
         </div>
       </div>
+
+      {viewing !== null ? (
+        <PhotoViewer
+          photos={values.photos}
+          index={viewing}
+          onClose={() => setViewing(null)}
+          onIndexChange={setViewing}
+        />
+      ) : null}
     </form>
   )
 }

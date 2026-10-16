@@ -1,27 +1,31 @@
 import { Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
-import { newId, type WeightEntry } from '@/lib/weight'
+import { newId, type PhotoDraft, type WeightEntry } from '@/lib/weight'
 import { WeightFields, type WeightFormValues } from '@/components/weight-fields'
 
 type WeightEntryEditSheetProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   entry: WeightEntry
-  onSubmit: (entry: WeightEntry) => void
+  onSubmit: (values: WeightFormValues) => void
   onDelete: () => void
+  isSaving: boolean
+  error: string | null
 }
 
-/** Seeds the form from the entry, naming existing photos so they can be kept. */
+/** Seeds the form from the entry, marking its photos as already saved. */
 const valuesFromEntry = (entry: WeightEntry): WeightFormValues => ({
   date: entry.date,
   weight: entry.weight,
   measurements: { ...entry.measurements },
-  photos: entry.photos.map((url, i) => ({
+  photos: entry.photos.map((photo, i) => ({
     id: newId('photo'),
-    url,
+    url: photo.url,
     name: `Photo ${i + 1}`,
+    file: null,
+    photoId: photo.id,
   })),
 })
 
@@ -31,21 +35,28 @@ export function WeightEntryEditSheet({
   entry,
   onSubmit,
   onDelete,
+  isSaving,
+  error,
 }: WeightEntryEditSheetProps) {
   const [values, setValues] = useState<WeightFormValues>(() =>
     valuesFromEntry(entry)
   )
 
-  // Re-seed whenever a different entry is opened.
+  const seeded = useRef(entry.id)
+
   useEffect(() => {
-    if (open) setValues(valuesFromEntry(entry))
-  }, [open, entry])
+    if (seeded.current === entry.id) return
+    seeded.current = entry.id
+    setValues(valuesFromEntry(entry))
+  }, [entry])
 
   const addPhotos = (files: FileList) => {
-    const next = Array.from(files).map((file) => ({
+    const next: PhotoDraft[] = Array.from(files).map((file) => ({
       id: newId('photo'),
       url: URL.createObjectURL(file),
       name: file.name,
+      file,
+      photoId: null,
     }))
     setValues((v) => ({ ...v, photos: [...v.photos, ...next] }))
   }
@@ -54,28 +65,14 @@ export function WeightEntryEditSheet({
     setValues((v) => {
       const photo = v.photos.find((p) => p.id === id)
       // Only revoke URLs created in this session, not the entry's own previews.
-      if (photo && !entry.photos.includes(photo.url)) {
-        URL.revokeObjectURL(photo.url)
-      }
+      if (photo?.file) URL.revokeObjectURL(photo.url)
       return { ...v, photos: v.photos.filter((p) => p.id !== id) }
     })
   }
 
   const confirm = () => {
     if (!values.weight || values.weight <= 0) return
-    onSubmit({
-      id: entry.id,
-      date: values.date,
-      weight: values.weight,
-      measurements: values.measurements,
-      photos: values.photos.map((p) => p.url),
-    })
-    onOpenChange(false)
-  }
-
-  const handleDelete = () => {
-    onDelete()
-    onOpenChange(false)
+    onSubmit(values)
   }
 
   return (
@@ -91,13 +88,25 @@ export function WeightEntryEditSheet({
           <WeightFields
             values={values}
             onChange={setValues}
+            idPrefix="edit"
             onSubmit={confirm}
             onAddPhotos={addPhotos}
             onRemovePhoto={(photo) => removePhoto(photo.id)}
           />
 
+          {error ? (
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+
           <div className="mt-6 flex gap-3">
-            <Button variant="destructive" size="lg" onClick={handleDelete}>
+            <Button
+              variant="destructive"
+              size="lg"
+              onClick={onDelete}
+              disabled={isSaving}
+            >
               <Trash2 />
               Delete
             </Button>
@@ -105,9 +114,9 @@ export function WeightEntryEditSheet({
               className="flex-1"
               size="lg"
               onClick={confirm}
-              disabled={!values.weight || values.weight <= 0}
+              disabled={isSaving || !values.weight || values.weight <= 0}
             >
-              Save
+              {isSaving ? 'Saving…' : 'Save'}
             </Button>
           </div>
         </div>

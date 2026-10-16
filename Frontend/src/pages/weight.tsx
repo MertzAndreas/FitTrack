@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus } from 'lucide-react'
 import { cn } from 'cn'
+import { Button } from '@/components/ui/button'
 import { WeightEntryAddSheet } from '@/components/weight-entry-add-sheet'
 import { WeightEntryEditSheet } from '@/components/weight-entry-edit-sheet'
 import { WeightEntryList } from '@/components/weight-entry-list'
@@ -7,24 +10,59 @@ import { WeightPhaseSheet } from '@/components/weight-phase-sheet'
 import { WeightSummaryCard } from '@/components/weight-summary-card'
 import type { Granularity, WeightRange } from '@/lib/weight-chart'
 import type { Phase } from '@/lib/weight-phase'
-import { daysSinceLastEntry, upsertEntry, type WeightEntry } from '@/lib/weight'
+import { daysSinceLastEntry, type WeightEntry } from '@/lib/weight'
+import type { EntryValues } from '@/lib/weight-api'
+import { weightApi } from '@/lib/weight-api'
 import { today } from '@/lib/weight-dates'
-import { seedEntries, seedPhases } from '@/lib/weight-seed'
 import { initialGranularity, summariseWeightPage } from '@/lib/weight-view'
 
+const weightKey = ['weight']
+
+/** Error messages, for handing to a component as a plain string. */
+const messageOf = (error: unknown): string | null =>
+  error === null || error === undefined
+    ? null
+    : error instanceof Error
+      ? error.message
+      : String(error)
+
 export function WeightPage() {
-  // In-memory for now, like the rest of the app. Resets on reload.
-  const [entries, setEntries] = useState<WeightEntry[]>(() => seedEntries())
-  const [phases, setPhases] = useState<Phase[]>(() => seedPhases())
+  const queryClient = useQueryClient()
+  const entriesQuery = useQuery({ queryKey: weightKey, queryFn: weightApi.list })
+  const entries = entriesQuery.data ?? []
+  const refresh = () => queryClient.invalidateQueries({ queryKey: weightKey })
+
+  const [phases, setPhases] = useState<Phase[]>([])
   const [range, setRange] = useState<WeightRange>('all')
-  const [granularity, setGranularity] = useState<Granularity>(() =>
-    initialGranularity(seedEntries(), 'all')
-  )
+  const [granularity, setGranularity] = useState<Granularity>('week')
 
   const [addOpen, setAddOpen] = useState(false)
   const [editing, setEditing] = useState<WeightEntry | null>(null)
   // Phase sheet: closed → null, create → 'new', edit → the phase.
   const [phaseSheet, setPhaseSheet] = useState<Phase | 'new' | null>(null)
+
+  const saveEntry = useMutation({
+    mutationFn: ({
+      values,
+      original,
+    }: {
+      values: EntryValues
+      original: WeightEntry | null
+    }) => weightApi.save(values, original),
+    onSuccess: () => {
+      setAddOpen(false)
+      setEditing(null)
+      void refresh()
+    },
+  })
+
+  const deleteEntry = useMutation({
+    mutationFn: (entry: WeightEntry) => weightApi.remove(entry.date),
+    onSuccess: () => {
+      setEditing(null)
+      void refresh()
+    },
+  })
 
   const view = summariseWeightPage(
     entries,
@@ -41,12 +79,15 @@ export function WeightPage() {
     setGranularity(initialGranularity(entries, next))
   }
 
-  const saveEntry = (entry: WeightEntry) => {
-    setEntries((prev) => upsertEntry(prev, entry))
+  const openAdd = () => {
+    saveEntry.reset()
+    setAddOpen(true)
   }
 
-  const deleteEntry = (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id))
+  const openEdit = (entry: WeightEntry) => {
+    saveEntry.reset()
+    deleteEntry.reset()
+    setEditing(entry)
   }
 
   const savePhase = (next: Phase) => {
@@ -84,6 +125,12 @@ export function WeightPage() {
         ) : null}
       </header>
 
+      {entriesQuery.error ? (
+        <p className="border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {messageOf(entriesQuery.error)}
+        </p>
+      ) : null}
+
       {entries.length > 0 ? (
         <WeightSummaryCard
           view={view}
@@ -93,7 +140,7 @@ export function WeightPage() {
           onGranularityChange={setGranularity}
           onEditPhase={setPhaseSheet}
           onNewPhase={() => setPhaseSheet('new')}
-          onLog={() => setAddOpen(true)}
+          onLog={openAdd}
         />
       ) : null}
 
@@ -102,24 +149,36 @@ export function WeightPage() {
           Entries
         </h2>
 
-        {entries.length > 0 ? (
+        {entriesQuery.isPending ? (
+          <p className="border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
+            Loading…
+          </p>
+        ) : entries.length > 0 ? (
           <WeightEntryList
             entries={entries}
             phases={phases}
-            onSelect={setEditing}
+            onSelect={openEdit}
             onViewPhase={(from, to) => setRange({ from, to })}
           />
         ) : (
-          <p className="border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-            No entries yet. Log your first weight to get started.
-          </p>
+          <div className="flex flex-col items-center gap-3 border border-dashed border-border py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              No entries yet. Log your first weight to get started.
+            </p>
+            <Button size="lg" onClick={openAdd}>
+              <Plus />
+              Log weight
+            </Button>
+          </div>
         )}
       </section>
 
       <WeightEntryAddSheet
         open={addOpen}
         onOpenChange={setAddOpen}
-        onSubmit={saveEntry}
+        onSubmit={(values) => saveEntry.mutate({ values, original: null })}
+        isSaving={saveEntry.isPending}
+        error={messageOf(saveEntry.error)}
       />
 
       {editing ? (
@@ -129,8 +188,10 @@ export function WeightPage() {
             if (!open) setEditing(null)
           }}
           entry={editing}
-          onSubmit={saveEntry}
-          onDelete={() => deleteEntry(editing.id)}
+          onSubmit={(values) => saveEntry.mutate({ values, original: editing })}
+          onDelete={() => deleteEntry.mutate(editing)}
+          isSaving={saveEntry.isPending || deleteEntry.isPending}
+          error={messageOf(saveEntry.error ?? deleteEntry.error)}
         />
       ) : null}
 

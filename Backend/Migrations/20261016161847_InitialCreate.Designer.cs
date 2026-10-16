@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitTrack.Migrations
 {
     [DbContext(typeof(FitTrackDbContext))]
-    [Migration("20261016154019_InitialCreate")]
+    [Migration("20261016161847_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -26,9 +26,6 @@ namespace FitTrack.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("EntryId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -36,12 +33,15 @@ namespace FitTrack.Migrations
                     b.Property<double>("ValueCm")
                         .HasColumnType("REAL");
 
+                    b.Property<int>("WeightEntryId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("EntryId", "Kind")
+                    b.HasIndex("WeightEntryId", "Kind")
                         .IsUnique();
 
-                    b.ToTable("Measurements");
+                    b.ToTable("BodyMeasurements");
                 });
 
             modelBuilder.Entity("FitTrack.Model.Entry", b =>
@@ -52,9 +52,6 @@ namespace FitTrack.Migrations
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
-
-                    b.Property<double?>("WeightKg")
-                        .HasColumnType("REAL");
 
                     b.HasKey("Id");
 
@@ -212,29 +209,49 @@ namespace FitTrack.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("EntryId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("WeightEntryId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("EntryId");
+                    b.HasIndex("WeightEntryId");
 
                     b.ToTable("Photos");
                 });
 
+            modelBuilder.Entity("FitTrack.Model.WeightEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("EntryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("WeightKg")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryId")
+                        .IsUnique();
+
+                    b.ToTable("WeightEntries");
+                });
+
             modelBuilder.Entity("FitTrack.Model.BodyMeasurement", b =>
                 {
-                    b.HasOne("FitTrack.Model.Entry", "Entry")
+                    b.HasOne("FitTrack.Model.WeightEntry", "WeightEntry")
                         .WithMany("Measurements")
-                        .HasForeignKey("EntryId")
+                        .HasForeignKey("WeightEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Entry");
+                    b.Navigation("WeightEntry");
                 });
 
             modelBuilder.Entity("FitTrack.Model.Food", b =>
@@ -298,9 +315,20 @@ namespace FitTrack.Migrations
 
             modelBuilder.Entity("FitTrack.Model.Photo", b =>
                 {
-                    b.HasOne("FitTrack.Model.Entry", "Entry")
+                    b.HasOne("FitTrack.Model.WeightEntry", "WeightEntry")
                         .WithMany("Photos")
-                        .HasForeignKey("EntryId")
+                        .HasForeignKey("WeightEntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WeightEntry");
+                });
+
+            modelBuilder.Entity("FitTrack.Model.WeightEntry", b =>
+                {
+                    b.HasOne("FitTrack.Model.Entry", "Entry")
+                        .WithOne("WeightEntry")
+                        .HasForeignKey("FitTrack.Model.WeightEntry", "EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -311,14 +339,19 @@ namespace FitTrack.Migrations
                 {
                     b.Navigation("MealBlocks");
 
-                    b.Navigation("Measurements");
-
-                    b.Navigation("Photos");
+                    b.Navigation("WeightEntry");
                 });
 
             modelBuilder.Entity("FitTrack.Model.MealBlock", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("FitTrack.Model.WeightEntry", b =>
+                {
+                    b.Navigation("Measurements");
+
+                    b.Navigation("Photos");
                 });
 #pragma warning restore 612, 618
         }
