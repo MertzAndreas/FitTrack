@@ -12,3 +12,4 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DB_PATH=/data/fittrack.db
+    user: "${FITTRACK_UID:-1000}:${FITTRACK_GID:-1000}"

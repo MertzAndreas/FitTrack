@@ -10,14 +10,9 @@ RUN pnpm install --frozen-lockfile
 COPY Frontend/ ./
 RUN pnpm run build
 
-# Stage 2: Compile the C# Native AOT binary
+# Stage 2: Compile the .NET backend
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /app/backend
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY Backend/Backend.csproj ./
 RUN dotnet restore Backend.csproj
@@ -28,11 +23,11 @@ RUN dotnet publish Backend.csproj \
     --no-restore \
     -o /app/publish
 
-# Stage 3: Minimal chiseled runtime
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled
+# Stage 3: ASP.NET Core runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
 WORKDIR /app
 
-COPY --from=backend-build /app/publish/Backend ./Backend
+COPY --from=backend-build /app/publish/ ./
 COPY --from=frontend-build /app/frontend/dist ./wwwroot
 
 VOLUME ["/data"]

@@ -2,17 +2,17 @@
 
 Personal fitness tracker. **Single user, no auth, no multi-tenancy.** Mobile-first PWA.
 
-**Current stage: frontend-first.** Everything is mocked. There is no database, no real
-data, and no API calls from the frontend. The backend exists as a shell (health check +
-static file host). Build the UI against mock data; wire it up later.
+**Current stage: frontend-first.** The frontend is fully mocked — no API calls. The backend has
+a data model and schema (`Backend/Model/`, `Backend/Data/`) but no endpoints yet. Build the UI
+against mock data; wire it up when endpoints exist.
 
 ## Layout
 
 ```
 Frontend/        React 19 + Vite + TS. shadcn/ui on Base UI. Tailwind v4.
-Backend/         .NET 10 minimal API. Native AOT. Serves the built frontend from wwwroot.
+Backend/         .NET 10 minimal API. EF Core + SQLite. Serves the built frontend.
 Dockerfile       3-stage: pnpm build -> dotnet publish -> chiseled runtime.
-docker-compose   Mounts ./data -> /data, SQLite at /data/fittrack.db (not yet used).
+docker-compose   Mounts ./data -> /data, SQLite at /data/fittrack.db.
 ```
 
 Frontend package manager is **pnpm**. Always run commands from `Frontend/`.

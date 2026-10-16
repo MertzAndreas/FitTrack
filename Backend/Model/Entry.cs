@@ -1,0 +1,16 @@
+namespace FitTrack.Model;
+
+/// <summary>One tracked day. Anchors both the weigh-in and the meals.</summary>
+public class Entry
+{
+  public int Id { get; set; }
+
+  /// <summary>Unique — one entry per day.</summary>
+  public DateOnly Date { get; set; }
+
+  public double? WeightKg { get; set; }
+
+  public List<BodyMeasurement> Measurements { get; set; } = [];
+  public List<Photo> Photos { get; set; } = [];
+  public List<MealBlock> MealBlocks { get; set; } = [];
+}
