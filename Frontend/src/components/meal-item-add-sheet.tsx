@@ -1,5 +1,6 @@
-import { Search } from 'lucide-react'
+import { ScanBarcode, Search } from 'lucide-react'
 import { useState } from 'react'
+import { BarcodeScanner } from '@/components/barcode-scanner'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
@@ -21,7 +22,7 @@ export function MealItemAddSheet({
   foods,
   onSubmit,
 }: MealItemAddSheetProps) {
-  const [step, setStep] = useState<'search' | 'amount'>('search')
+  const [step, setStep] = useState<'search' | 'amount' | 'scan'>('search')
   const [query, setQuery] = useState('')
   const [foodId, setFoodId] = useState('')
   const [amount, setAmount] = useState(100)
@@ -59,64 +60,81 @@ export function MealItemAddSheet({
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} showSwipeHandle>
       <DrawerContent className="mx-auto max-w-xl">
+        {step === 'scan' ? (
+          <BarcodeScanner
+            onScan={(code) => {
+              setQuery(code)
+              setStep('search')
+            }}
+            onCancel={() => setStep('search')}
+          />
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+            {step === 'search' ? (
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search foods"
+                    className="h-11 pl-9"
+                    aria-label="Search foods"
+                  />
+                </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-          {step === 'search' ? (
-            <div className="space-y-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search foods"
-                  className="h-11 pl-9"
-                  aria-label="Search foods"
-                />
-              </div>
-
-              {matches.length > 0 ? (
-                <ul className="space-y-1.5">
-                  {matches.map((food) => (
-                    <li key={food.id}>
-                      <FoodRow food={food} onClick={() => chooseFood(food)} />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No foods match “{query}”
-                </p>
-              )}
-            </div>
-          ) : (
-            <>
-
-              <MealAmountFields
-                food={selected}
-                amount={amount}
-                onAmountChange={setAmount}
-                onSubmit={confirm}
-              />
-
-
-              <div className="mt-6 flex gap-3">
-                <Button size={"lg"} variant={"secondary"} onClick={() => setStep('search')}>
-                  Back
-                </Button>
                 <Button
-                  className="flex-1"
+                  variant="secondary"
                   size="lg"
-                  onClick={confirm}
-                  disabled={!foodId}
+                  className="w-full"
+                  onClick={() => setStep('scan')}
                 >
-                  Add
+                  <ScanBarcode />
+                  Scan barcode
                 </Button>
+
+                {matches.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {matches.map((food) => (
+                      <li key={food.id}>
+                        <FoodRow food={food} onClick={() => chooseFood(food)} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No foods match “{query}”
+                  </p>
+                )}
               </div>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <MealAmountFields
+                  food={selected}
+                  amount={amount}
+                  onAmountChange={setAmount}
+                  onSubmit={confirm}
+                />
+
+                <div className="mt-6 flex gap-3">
+                  <Button size="lg" variant="secondary" onClick={() => setStep('search')}>
+                    Back
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    size="lg"
+                    onClick={confirm}
+                    disabled={!foodId}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </DrawerContent>
-    </Drawer >
+    </Drawer>
   )
 }
