@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" xmlns:c2pa="http://c2pa.org/manifest">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#242424" />
+
+  <!-- Scale body -->
+  <rect x="40" y="40" width="432" height="432" rx="56" fill="#242424" stroke="#FFFFFF" stroke-width="24" />
+
+  <!-- Scale display -->
+  <rect x="88" y="88" width="336" height="116" rx="16" fill="#FFFFFF" />
+
+  <!-- Bars -->
+  <rect x="118" y="146" width="28" height="34" fill="#242424" />
+  <rect x="160" y="124" width="28" height="56" fill="#242424" />
+  <rect x="202" y="136" width="28" height="44" fill="#242424" />
+
+  <!-- Line (trending down) -->
+  <polyline points="275,130 315,145 355,135 395,168" fill="none" stroke="#242424" stroke-width="12" stroke-linejoin="round" stroke-linecap="round" />
+
+  <!-- Dumbbell sitting on the scale platform -->
+  <rect x="196" y="324" width="120" height="24" fill="#FFFFFF" />
+
+  <!-- Left plates -->
+  <rect x="172" y="280" width="24" height="112" fill="#FFFFFF" />
+  <rect x="144" y="294" width="24" height="84" fill="#FFFFFF" />
+  <rect x="116" y="308" width="24" height="56" fill="#FFFFFF" />
+
+  <!-- Right plates -->
+  <rect x="316" y="280" width="24" height="112" fill="#FFFFFF" />
+  <rect x="344" y="294" width="24" height="84" fill="#FFFFFF" />
+  <rect x="372" y="308" width="24" height="56" fill="#FFFFFF" />
+</svg>
