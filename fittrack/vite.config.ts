@@ -9,4 +9,13 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5159',
+        changeOrigin: true,
+        rewrite: (url) => url.replace(/^\/api/, ''),
+      },
+    },
+  },
 })

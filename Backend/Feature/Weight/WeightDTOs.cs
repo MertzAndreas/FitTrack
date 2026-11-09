@@ -5,6 +5,6 @@ public record CreateMeasurement(string Name, double LengthCm);
 public record UpsertWeightEntryForm(
     DateOnly Date,
     double WeightKg,
-    string MeasurementsJson,
+    string MeasurementsJson, // CreateMeasurement
     IFormFileCollection? Photos
 );

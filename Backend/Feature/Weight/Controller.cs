@@ -14,7 +14,7 @@ public static class WeightEndpoints
     {
         var api = app.MapGroup("/weight");
         api.MapGet(
-            "/weight",
+            "/",
             async (AppDbContext db) =>
                 await db
                     .WeightEntries.Include(w => w.Measurements)
@@ -23,7 +23,7 @@ public static class WeightEndpoints
         );
 
         api.MapPost(
-                "/weight",
+                "/",
                 async (
                     [FromForm] UpsertWeightEntryForm form,
                     AppDbContext db,
@@ -105,7 +105,7 @@ public static class WeightEndpoints
             .DisableAntiforgery();
 
         api.MapDelete(
-            "/weight/photos/{id:int}",
+            "/photos/{id:int}",
             async (int id, AppDbContext db, PhotoStorage photoStore) =>
             {
                 var photo = await db.WeightPhotos.FindAsync(id);
@@ -121,7 +121,7 @@ public static class WeightEndpoints
         );
 
         api.MapGet(
-            "/weight/photos/{id:int}",
+            "/photos/{id:int}",
             async (int id, AppDbContext db, PhotoStorage photoStore) =>
             {
                 var photo = await db.WeightPhotos.FindAsync(id);
