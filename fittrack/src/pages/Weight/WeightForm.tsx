@@ -1,6 +1,7 @@
-import { useFieldArray, useForm, type DefaultValues } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { Link } from "react-router";
+import { format } from "date-fns";
 import {
   Field,
   FieldError,
@@ -9,51 +10,90 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash } from "lucide-react";
-import { useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { api, ApiError } from "@/lib/api";
-import { toast } from "@/components/ui/toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ReactNode } from "react";
+import { useMemo, useRef } from "react";
+import type { MeasurementSite, WeightEntry } from "./types";
+import {
+  useMeasurementSites,
+  useTrackedMeasurements,
+  useUpsertWeightEntry,
+  useWeightEntries,
+} from "./use-weight-entries";
+import { WeightPhotos } from "./WeightPhotos";
+import {
+  getDefaultValues,
+  schema,
+  toFormValues,
+  type FormValues,
+} from "./weight-form-schema";
 
-const MAX_FILE_SZIE = 10 * 1024 * 1024; // 10 MiB
-
-const measurements = [
-  { name: "Chest", lengthCm: undefined },
-  { name: "Waist", lengthCm: undefined },
-  { name: "Bicep", lengthCm: undefined },
-  { name: "Thigh", lengthCm: undefined },
-];
-
-const schema = z.object({
-  date: z.string().min(1),
-  weight: z.number().positive().max(500),
-  photos: z.array(
-    z.file().max(MAX_FILE_SZIE).mime(["image/jpeg", "image/png"]),
-  ),
-  measurements: z.array(
-    z.object({ name: z.string(), lengthCm: z.number().positive() }),
-  ),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-interface WeightEntry {
-  id: number;
-  date: string;
-  weightKg: number;
-  measurements: { id: number; name: string; lengthCm: number }[];
-  photos: { id: number; fileName: string; contentHash: string }[];
-}
-
-const today = new Date().toISOString().slice(0, 10);
-const defaultValues: DefaultValues<FormValues> = {
-  date: today,
-  weight: "" as unknown as number,
-  photos: [],
-  measurements,
+const blankToUndefined = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  return value.trim() === "" ? undefined : Number(value);
 };
 
-export const WeightForm = () => {
+const FormCard = ({
+  entry,
+  children,
+}: {
+  entry?: WeightEntry;
+  children: ReactNode;
+}) => (
+  <Card className="flex flex-col">
+    <CardHeader>
+      <CardTitle>{entry ? "Edit Weight" : "Log Weight"}</CardTitle>
+    </CardHeader>
+    <CardContent className="flex-1">{children}</CardContent>
+  </Card>
+);
+
+type WeightFormProps = {
+  entry?: WeightEntry;
+  onDone?: () => void;
+};
+
+export const WeightForm = ({ entry, onDone }: WeightFormProps) => {
+  const sitesQuery = useMeasurementSites();
+  const trackedQuery = useTrackedMeasurements();
+
+  if (!entry && (sitesQuery.isPending || trackedQuery.isPending))
+    return (
+      <FormCard entry={entry}>
+        <p className="text-sm text-muted-foreground">Loading measurements…</p>
+      </FormCard>
+    );
+
+  if (!entry && (!sitesQuery.data || !trackedQuery.data))
+    return (
+      <FormCard entry={entry}>
+        <p className="text-sm text-muted-foreground">
+          Could not load measurements.
+        </p>
+      </FormCard>
+    );
+
+  return (
+    <WeightFormFields
+      entry={entry}
+      onDone={onDone}
+      sites={sitesQuery.data ?? []}
+      trackedSites={trackedQuery.data ?? []}
+    />
+  );
+};
+
+type WeightFormFieldsProps = WeightFormProps & {
+  sites: MeasurementSite[];
+  trackedSites: number[];
+};
+
+const WeightFormFields = ({
+  entry,
+  onDone,
+  sites,
+  trackedSites,
+}: WeightFormFieldsProps) => {
   const photosRef = useRef<HTMLInputElement>(null);
   const {
     register,
@@ -64,117 +104,145 @@ export const WeightForm = () => {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: entry
+      ? toFormValues(entry)
+      : getDefaultValues(trackedSites, sites),
   });
 
-  const { fields, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control,
     name: "measurements",
   });
 
-  const saveEntry = useMutation({
-    mutationFn: (formData: FormData) =>
-      api.post<WeightEntry>("/weight", formData),
-    onSuccess: () => {
-      toast.add({ title: "Weight entry saved", type: "success" });
-      reset(defaultValues);
-    },
-    onError: (error) => {
-      const message =
-        error instanceof ApiError
-          ? (Object.values(error.fieldErrors).flat()[0] ?? error.message)
-          : error.message;
-      toast.add({
-        title: "Could not save weight entry",
-        description: message,
-        type: "error",
-      });
-    },
-  });
+  const { data: entries = [] } = useWeightEntries();
+  const date = useWatch({ control, name: "date" });
+
+  const lastValues = useMemo(() => {
+    const values = new Map<number, number>();
+    if (!date) return values;
+    for (const entry of entries) {
+      if (format(entry.date, "yyyy-MM-dd") >= date) continue;
+      for (const m of entry.measurements) values.set(m.site, m.lengthCm);
+    }
+    return values;
+  }, [entries, date]);
+
+  const saveEntry = useUpsertWeightEntry();
 
   const onSave = (data: FormValues) => {
     const formData = new FormData();
     formData.append("date", data.date);
     formData.append("weightkg", String(data.weight));
-    formData.append("measurementsjson", JSON.stringify(data.measurements));
+    formData.append(
+      "measurementsjson",
+      JSON.stringify(
+        data.measurements.flatMap((m) =>
+          m.lengthCm === undefined
+            ? []
+            : [{ site: m.site, lengthCm: m.lengthCm }],
+        ),
+      ),
+    );
     data.photos.forEach((file) => formData.append("photos", file));
-    if (photosRef.current) photosRef.current.value = "";
-    saveEntry.mutate(formData);
+
+    saveEntry.mutate(formData, {
+      onSuccess: () => {
+        reset(getDefaultValues(trackedSites, sites));
+        if (photosRef.current) photosRef.current.value = "";
+        onDone?.();
+      },
+    });
   };
 
   return (
-    <form
-      onSubmit={(event) => handleSubmit(onSave)(event)}
-      encType="multipart/form-data"
-      className="space-y-4 md:space-y-8"
-    >
-      <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field data-invalid={!!errors.weight}>
-          <FieldLabel htmlFor="weight">Weight (kg)</FieldLabel>
-          <Input
-            id="weight"
-            type="number"
-            aria-invalid={!!errors.weight}
-            {...register("weight", { valueAsNumber: true })}
-          />
-          <FieldError errors={[errors.weight]} />
-        </Field>
-        <Field data-invalid={!!errors.date}>
-          <FieldLabel htmlFor="date">Date</FieldLabel>
-          <Input id="date" type="date" {...register("date")} />
-          <FieldError errors={[errors.date]} />
-        </Field>
-      </FieldGroup>
-
-      <Field data-invalid={!!errors.photos}>
-        <FieldLabel htmlFor="photos">Photos</FieldLabel>
-        <Input
-          id="photos"
-          type="file"
-          multiple
-          onChange={(e) =>
-            setValue("photos", Array.from(e.target.files ?? []), {
-              shouldValidate: true,
-            })
-          }
-          ref={photosRef}
-        />
-        <FieldError errors={[errors.photos]} />
-      </Field>
-
-      <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {fields.map((m, i) => (
-          <Field key={m.id}>
-            <FieldLabel htmlFor={`measurement-${i}`}>{m.name}</FieldLabel>
-
-            <div className="flex items-center gap-2">
-              <Input
-                id={`measurement-${i}`}
-                type="number"
-                {...register(`measurements.${i}.lengthCm`, {
-                  valueAsNumber: true,
-                })}
-              />
-
-              <Button
-                variant="ghost"
-                size="icon"
-                type="button"
-                onClick={() => remove(i)}
-                aria-label={`Remove ${m.name}`}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-              >
-                <Trash className="size-4" />
-              </Button>
-            </div>
-
-            <FieldError errors={[errors.measurements?.[i]?.lengthCm]} />
+    <FormCard entry={entry}>
+      <form
+        onSubmit={(event) => handleSubmit(onSave)(event)}
+        encType="multipart/form-data"
+        className="flex flex-col h-full gap-4 md:gap-8"
+      >
+        <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <Field data-invalid={!!errors.weight}>
+            <FieldLabel htmlFor="weight">Weight (kg)</FieldLabel>
+            <Input
+              id="weight"
+              type={"number"}
+              step={"any"}
+              aria-invalid={!!errors.weight}
+              {...register("weight", { valueAsNumber: true })}
+            />
+            <FieldError errors={[errors.weight]} />
           </Field>
-        ))}
-      </FieldGroup>
-      <Button className={"w-full mt-4"} type="submit">
-        Save
-      </Button>
-    </form>
+          <Field data-invalid={!!errors.date}>
+            <FieldLabel htmlFor="date">Date</FieldLabel>
+            <Input id="date" type="date" {...register("date")} />
+            <FieldError errors={[errors.date]} />
+          </Field>
+        </FieldGroup>
+
+        <WeightPhotos
+          entry={entry}
+          photosRef={photosRef}
+          onFilesChange={(files) =>
+            setValue("photos", files, { shouldValidate: true })
+          }
+          error={errors.photos}
+        />
+
+        {fields.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No measurements tracked yet.{" "}
+            <Link
+              to="/settings"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Choose them in Settings
+            </Link>
+            .
+          </p>
+        ) : (
+          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {fields.map((m, i) => {
+              const last = lastValues.get(m.site);
+              return (
+                <Field key={m.id}>
+                  <FieldLabel htmlFor={`measurement-${m.id}`}>
+                    {m.name}
+                  </FieldLabel>
+
+                  <Input
+                    id={`measurement-${m.id}`}
+                    type="number"
+                    step={"any"}
+                    placeholder={last === undefined ? "cm" : `Last: ${last} cm`}
+                    {...register(`measurements.${i}.lengthCm`, {
+                      setValueAs: blankToUndefined,
+                    })}
+                  />
+
+                  <FieldError errors={[errors.measurements?.[i]?.lengthCm]} />
+                </Field>
+              );
+            })}
+          </FieldGroup>
+        )}
+
+        <div className="mt-auto flex gap-2">
+          {entry && (
+            <Button
+              className="flex-1"
+              variant="outline"
+              type="button"
+              onClick={onDone}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button className="flex-1" type="submit">
+            Save
+          </Button>
+        </div>
+      </form>
+    </FormCard>
   );
 };

@@ -13,13 +13,64 @@ public static class WeightEndpoints
     public static void Map(WebApplication app)
     {
         var api = app.MapGroup("/weight");
+
+        api.MapGet(
+            "/measurement-types",
+            (HttpContext http) =>
+            {
+                http.Response.Headers.CacheControl = "private, max-age=86400";
+
+                return Enum.GetValues<MeasurementSite>()
+                    .Select(s => new MeasurementSiteDto((int)s, s.ToString()))
+                    .ToList();
+            }
+        );
+
+        api.MapGet(
+            "/tracked",
+            async (AppDbContext db, CancellationToken ct) =>
+                await db
+                    .TrackedMeasurements.AsNoTracking()
+                    .OrderBy(t => t.Site)
+                    .Select(t => (int)t.Site)
+                    .ToListAsync(ct)
+        );
+
+        api.MapPut(
+            "/tracked",
+            async ([FromBody] int[] sites, AppDbContext db, CancellationToken ct) =>
+            {
+                if (sites.Any(s => !Enum.IsDefined(typeof(MeasurementSite), s)))
+                    return Results.BadRequest("Unknown measurement site.");
+
+                var selected = sites.Distinct().Select(s => (MeasurementSite)s).ToList();
+
+                var existing = await db.TrackedMeasurements.ToListAsync(ct);
+                db.TrackedMeasurements.RemoveRange(existing.Where(t => !selected.Contains(t.Site)));
+                db.TrackedMeasurements.AddRange(
+                    selected
+                        .Where(s => existing.All(t => t.Site != s))
+                        .Select(s => new TrackedMeasurement { Site = s })
+                );
+                await db.SaveChangesAsync(ct);
+
+                return Results.Ok(selected.OrderBy(s => s).Select(s => (int)s).ToList());
+            }
+        );
+
         api.MapGet(
             "/",
-            async (AppDbContext db) =>
-                await db
-                    .WeightEntries.Include(w => w.Measurements)
+            async (AppDbContext db, CancellationToken ct) =>
+            {
+                var entries = await db
+                    .WeightEntries.AsNoTracking()
+                    .Include(w => w.Measurements)
                     .Include(w => w.Photos)
-                    .ToListAsync()
+                    .OrderBy(w => w.Date)
+                    .ToListAsync(ct);
+
+                return entries.Select(ToDto).ToList();
+            }
         );
 
         api.MapPost(
@@ -37,6 +88,9 @@ public static class WeightEndpoints
                             form.MeasurementsJson,
                             JsonSerializerOptions.Web
                         ) ?? [];
+
+                    if (measurements.Any(m => !Enum.IsDefined(m.Site)))
+                        return Results.BadRequest("Unknown measurement site.");
 
                     var entry = await db
                         .WeightEntries.Include(w => w.Measurements)
@@ -56,7 +110,7 @@ public static class WeightEndpoints
                     [
                         .. measurements.Select(m => new Measurement
                         {
-                            Name = m.Name,
+                            Site = m.Site,
                             LengthCm = m.LengthCm,
                         }),
                     ];
@@ -97,23 +151,46 @@ public static class WeightEndpoints
                         throw;
                     }
 
-                    return isNew
-                        ? Results.Created($"/weight/{entry.Id}", entry)
-                        : Results.Ok(entry);
+                    var dto = ToDto(entry);
+                    return isNew ? Results.Created($"/weight/{entry.Id}", dto) : Results.Ok(dto);
                 }
             )
             .DisableAntiforgery();
 
         api.MapDelete(
+            "/{id:int}",
+            async (int id, AppDbContext db, PhotoStorage photoStore, CancellationToken ct) =>
+            {
+                var entry = await db
+                    .WeightEntries.Include(w => w.Measurements)
+                    .Include(w => w.Photos)
+                    .FirstOrDefaultAsync(w => w.Id == id, ct);
+
+                if (entry is null)
+                    return Results.NotFound();
+
+                var photoFiles = entry.Photos.Select(p => p.FileName).ToList();
+
+                db.WeightEntries.Remove(entry);
+                await db.SaveChangesAsync(ct);
+
+                foreach (var fileName in photoFiles)
+                    photoStore.Delete(fileName);
+
+                return Results.NoContent();
+            }
+        );
+
+        api.MapDelete(
             "/photos/{id:int}",
-            async (int id, AppDbContext db, PhotoStorage photoStore) =>
+            async (int id, AppDbContext db, PhotoStorage photoStore, CancellationToken ct) =>
             {
                 var photo = await db.WeightPhotos.FindAsync(id);
                 if (photo is null)
                     return Results.NotFound();
 
                 db.WeightPhotos.Remove(photo);
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(ct);
                 photoStore.Delete(photo.FileName);
 
                 return Results.NoContent();
@@ -122,12 +199,42 @@ public static class WeightEndpoints
 
         api.MapGet(
             "/photos/{id:int}",
-            async (int id, AppDbContext db, PhotoStorage photoStore) =>
+            async (int id, AppDbContext db, PhotoStorage photoStore, HttpContext http) =>
             {
                 var photo = await db.WeightPhotos.FindAsync(id);
-                var path = photo is null ? null : photoStore.GetPath(photo.FileName);
-                return path is null ? Results.NotFound() : Results.File(path);
+                if (photo is null)
+                    return Results.NotFound();
+
+                var path = photoStore.GetPath(photo.FileName);
+                if (path is null)
+                    return Results.NotFound();
+
+                http.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+
+                var contentType = Path.GetExtension(path).ToLowerInvariant() switch
+                {
+                    ".png" => "image/png",
+                    _ => "image/jpeg",
+                };
+
+                return Results.File(path, contentType, enableRangeProcessing: true);
             }
         );
     }
+
+    private static WeightEntryDto ToDto(WeightEntry entry) =>
+        new(
+            entry.Id,
+            entry.Date,
+            entry.WeightKg,
+            [
+                .. entry.Measurements.Select(m => new MeasurementDto(
+                    m.Id,
+                    m.Site,
+                    m.Site.ToString(),
+                    m.LengthCm
+                )),
+            ],
+            entry.Photos.Select(p => new WeightPhotoDto(p.Id)).ToList()
+        );
 }

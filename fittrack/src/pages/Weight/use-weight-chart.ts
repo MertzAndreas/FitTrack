@@ -1,6 +1,5 @@
 import * as React from "react";
 import {
-  addDays,
   format,
   getISOWeek,
   differenceInCalendarDays,
@@ -8,22 +7,7 @@ import {
   subDays,
 } from "date-fns";
 import { type DateRange } from "react-day-picker";
-
-const data = (): { date: Date; weightKg: number }[] => {
-  const totalDays = 365 * 2;
-  const from = subDays(new Date(), totalDays);
-  let currentWeight = 130;
-
-  return Array.from({ length: totalDays }, (_, index) => {
-    if (index > 0) {
-      const change = Math.random() < 0.2 ? 0.6 : -(0.1 + Math.random() * 0.6);
-      currentWeight += change;
-    }
-    return { date: addDays(from, index), weightKg: currentWeight };
-  });
-};
-
-const chartData = data();
+import type { WeightEntry } from "./types";
 
 type TickFormatter = (d: Date) => string;
 
@@ -77,7 +61,11 @@ const formatRange = (dates: Date[]) => {
   return `${dates[0].toDateString()} - ${dates[dates.length - 1].toDateString()}`;
 };
 
-const filterData = (key: IntervalKey, range?: DateRange) => {
+const filterData = (
+  key: IntervalKey,
+  chartData: WeightEntry[],
+  range?: DateRange,
+) => {
   if (key === "all") return chartData;
 
   if (key === "custom") {
@@ -92,12 +80,12 @@ const filterData = (key: IntervalKey, range?: DateRange) => {
   return chartData.filter((d) => d.date >= from && d.date <= now);
 };
 
-export const UseWeightChart = () => {
+export const UseWeightChart = (chartData: WeightEntry[]) => {
   const [activeKey, setActiveKey] = React.useState<IntervalKey>("30");
   const [customRange, setCustomRange] = React.useState<DateRange | undefined>();
 
   const config = resolveConfig(activeKey, customRange);
-  const range = filterData(activeKey, customRange);
+  const range = filterData(activeKey, chartData, customRange);
   const dateRangeLabel = formatRange(range.map((d) => d.date));
 
   const handleCustomSelect = (range: DateRange | undefined) => {

@@ -25,13 +25,14 @@ import {
 } from "@/components/ui/popover";
 import { INTERVALS, PRESET_KEYS, UseWeightChart } from "./use-weight-chart";
 import { format } from "date-fns";
+import type { WeightEntry } from "./types";
 
 const chartConfig = {
   weightKg: { label: "Weight (kg)", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
-export const WeightChart = () => {
-  const res = UseWeightChart();
+export const WeightChart = ({ data }: { data: WeightEntry[] }) => {
+  const res = UseWeightChart(data);
 
   return (
     <Card>
