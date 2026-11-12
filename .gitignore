@@ -1,3 +1,6 @@
 Backend/bin/
 Backend/obj/
+Backend/*.db
+Backend/*.db-shm
+Backend/*.db-wal
 uploads/
