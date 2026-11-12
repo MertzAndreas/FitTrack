@@ -6,6 +6,7 @@ import { WeightForm } from "./WeightForm";
 import { WeightChart } from "./WeightChart";
 import { WeightOverview } from "./WeightOverview";
 import { useWeightEntries } from "./use-weight-entries";
+import WeightStats from "./WeightStats";
 
 const Weight = () => {
   const { data, error, refetch } = useWeightEntries();
@@ -35,6 +36,8 @@ const Weight = () => {
       )}
 
       {data ? <WeightChart data={entries} /> : null}
+      {data ? <WeightStats data={entries} /> : null}
+
       <div className="gap-4 grid md:grid-cols-2 items-stretch">
         <WeightForm
           key={editingId ?? "new"}

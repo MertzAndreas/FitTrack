@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -30,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { WeightEntry } from "./types";
+import { LoggedDaysRing } from "./Stats/LoggedDaysRing";
 import { useDeleteWeightEntry, weightPhotoUrl } from "./use-weight-entries";
 
 const EntryDetails = ({
@@ -139,6 +141,9 @@ export const WeightOverview = ({
         <CardDescription>
           {entries.length} entries · tap a marked day to view it
         </CardDescription>
+        <CardAction>
+          <LoggedDaysRing entries={entries} />
+        </CardAction>
       </CardHeader>
       <CardContent className="px-0">
         <Calendar
