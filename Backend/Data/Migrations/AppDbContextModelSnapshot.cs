@@ -17,6 +17,59 @@ namespace Backend.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
+            modelBuilder.Entity("Backend.Models.Food", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Brands")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CarbsPer100g")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("FatPer100g")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("ImageSmallUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("KcalPer100g")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("ProteinPer100g")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("ServingQuantity")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("ServingSize")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("Source");
+
+                    b.ToTable("Foods");
+                });
+
             modelBuilder.Entity("Backend.Models.Measurement", b =>
                 {
                     b.Property<int>("Id")

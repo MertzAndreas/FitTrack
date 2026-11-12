@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Feature.Food;
 using Backend.Feature.Import;
 using Backend.Feature.Photos;
 using Backend.Feature.Weight;
@@ -15,7 +16,16 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
-    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    await FoodDataInitializer.EnsureSeededAsync(
+        db,
+        app.Configuration,
+        app.Environment,
+        app.Logger
+    );
+}
 
 if (app.Environment.IsDevelopment())
 {

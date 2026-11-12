@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<WeightPhoto> WeightPhotos => Set<WeightPhoto>();
     public DbSet<Measurement> Measurements => Set<Measurement>();
     public DbSet<TrackedMeasurement> TrackedMeasurements => Set<TrackedMeasurement>();
+    public DbSet<Food> Foods => Set<Food>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,6 +18,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<WeightEntry>().HasIndex(w => w.Date).IsUnique();
 
         modelBuilder.Entity<TrackedMeasurement>().HasKey(t => t.Site);
+
+        modelBuilder.Entity<Food>().HasIndex(f => f.Code).IsUnique();
+        modelBuilder.Entity<Food>().HasIndex(f => f.Source);
+        modelBuilder.Entity<Food>().Property(f => f.Source).HasConversion<int>();
 
         modelBuilder
             .Entity<WeightEntry>()

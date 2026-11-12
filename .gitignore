@@ -4,3 +4,4 @@ Backend/*.db
 Backend/*.db-shm
 Backend/*.db-wal
 uploads/
+OFF.csv.gz
