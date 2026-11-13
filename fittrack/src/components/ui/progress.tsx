@@ -1,5 +1,3 @@
-"use client"
-
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 import { cn } from "cn"
 
@@ -7,8 +5,9 @@ function Progress({
   className,
   children,
   value,
+  indicatorColor,
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressPrimitive.Root.Props & { indicatorColor?: string }) {
   return (
     <ProgressPrimitive.Root
       value={value}
@@ -18,7 +17,9 @@ function Progress({
     >
       {children}
       <ProgressTrack>
-        <ProgressIndicator />
+        <ProgressIndicator
+          style={indicatorColor ? { backgroundColor: indicatorColor } : undefined}
+        />
       </ProgressTrack>
     </ProgressPrimitive.Root>
   )
@@ -28,7 +29,7 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        "relative flex h-0.5 w-full items-center overflow-x-hidden rounded-none bg-muted",
+        "relative flex h-1.5 w-full items-center overflow-x-hidden rounded-none bg-muted",
         className
       )}
       data-slot="progress-track"
