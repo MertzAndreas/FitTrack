@@ -22,29 +22,26 @@ export const schema = z.object({
 
 export type FormValues = z.infer<typeof schema>;
 
-export const getDefaultValues = (
-  trackedSites: number[],
+export const toFormValues = (
   sites: MeasurementSite[],
-): DefaultValues<FormValues> => ({
-  date: new Date().toISOString().slice(0, 10),
-  weight: "" as unknown as number,
-  photos: [],
-  measurements: sites
-    .filter((site) => trackedSites.includes(site.id))
-    .map((site) => ({
-      site: site.id,
-      name: site.name,
-      lengthCm: undefined,
-    })),
-});
+  trackedSites: number[],
+  entry?: WeightEntry,
+  date = entry
+    ? format(entry.date, "yyyy-MM-dd")
+    : format(new Date(), "yyyy-MM-dd"),
+): DefaultValues<FormValues> => {
+  const siteById = new Map(sites.map((site) => [site.id, site]));
+  const saved = new Map(entry?.measurements.map((m) => [m.site, m]) ?? []);
+  const siteIds = [...new Set([...trackedSites, ...saved.keys()])];
 
-export const toFormValues = (entry: WeightEntry): DefaultValues<FormValues> => ({
-  date: format(entry.date, "yyyy-MM-dd"),
-  weight: entry.weightKg,
-  photos: [],
-  measurements: entry.measurements.map((m) => ({
-    site: m.site,
-    name: m.name,
-    lengthCm: m.lengthCm,
-  })),
-});
+  return {
+    date,
+    weight: entry?.weightKg ?? ("" as unknown as number),
+    photos: [],
+    measurements: siteIds.map((siteId) => ({
+      site: siteId,
+      name: siteById.get(siteId)?.name ?? saved.get(siteId)?.name ?? "",
+      lengthCm: saved.get(siteId)?.lengthCm,
+    })),
+  };
+};

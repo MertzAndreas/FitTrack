@@ -36,7 +36,7 @@ export const LoggedDaysRing = ({ entries }: { entries: WeightEntry[] }) => {
       label={`${percentLogged}%`}
       sublabel={`${loggedDays}/${totalDays}`}
       ariaLabel={`${percentLogged}% of days logged (${loggedDays} of ${totalDays})`}
-      color="var(--vivid-1)"
+      color="var(--chart-1)"
       size="compact"
     />
   );
