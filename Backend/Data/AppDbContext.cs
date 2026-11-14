@@ -44,6 +44,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(fe => fe.BlockId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Block>().Property(b => b.Name).UseCollation("NOCASE");
+        modelBuilder.Entity<Block>().HasIndex(b => new { b.DailyLogId, b.Name }).IsUnique();
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         modelBuilder.Entity<DailyLog>().HasIndex(w => w.Date).IsUnique();

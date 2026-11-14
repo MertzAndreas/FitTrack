@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { format } from "date-fns";
 import {
   Label,
   PolarAngleAxis,
@@ -27,8 +28,9 @@ import {
   calculateMealsMacros,
   MACRO_COLORS,
   type MacroName,
-  type Meal,
+  type Block,
 } from "./food";
+import { useSelectedDay } from "./use-selected-day";
 
 const GOAL = 2000;
 const SIZE = 320; // px, change this one number to resize everything
@@ -85,7 +87,6 @@ const Ring = ({ value, color, withBackground, children }: RingProps) => (
         fill={color}
         cornerRadius={10}
         background={withBackground}
-        isAnimationActive={false}
       />
       <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
         {children}
@@ -118,11 +119,11 @@ const MacrosOverview = ({ macros }: { macros: MacroGoal[] }) => (
 );
 
 type CaloriesCardProps = {
-  meals: Meal[];
+  blocks: Block[];
 };
-export const CaloriesCard = ({ meals }: CaloriesCardProps) => {
-  const today = new Date().toDateString();
-  const { kcal: consumed } = calculateMealsMacros(meals);
+export const CaloriesCard = ({ blocks }: CaloriesCardProps) => {
+  const { date, isToday } = useSelectedDay();
+  const { kcal: consumed } = calculateMealsMacros(blocks);
 
   const isOver = consumed > GOAL;
   const base = Math.min(consumed, GOAL);
@@ -131,8 +132,8 @@ export const CaloriesCard = ({ meals }: CaloriesCardProps) => {
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Today's Calories</CardTitle>
-        <CardDescription>{today}</CardDescription>
+        <CardTitle>{isToday ? "Today's Calories" : "Calories"}</CardTitle>
+        <CardDescription>{format(date, "EEEE, MMM d, yyyy")}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <div className="relative mx-auto aspect-square max-h-[300px]">

@@ -85,6 +85,64 @@ public static class FoodService
         await db.SaveChangesAsync(ct);
     }
 
+    public static async Task<int?> CopyDayAsync(
+        AppDbContext db,
+        DateOnly sourceDate,
+        DateOnly destinationDate,
+        CancellationToken ct
+    )
+    {
+        var source = await db
+            .DailyLogs.AsNoTracking()
+            .Include(dl => dl.Blocks)
+                .ThenInclude(b => b.Entries)
+            .FirstOrDefaultAsync(dl => dl.Date == sourceDate, ct);
+
+        if (source is null)
+            return null;
+
+        var destination = await db
+            .DailyLogs.Include(dl => dl.Blocks)
+            .FirstOrDefaultAsync(dl => dl.Date == destinationDate, ct);
+
+        if (destination is null)
+        {
+            destination = new DailyLog { Date = destinationDate };
+            db.DailyLogs.Add(destination);
+        }
+
+        foreach (var sourceBlock in source.Blocks.OrderBy(b => b.SortOrder))
+        {
+            var destinationBlock = destination.Blocks.FirstOrDefault(b =>
+                string.Equals(b.Name, sourceBlock.Name, StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (destinationBlock is null)
+            {
+                destinationBlock = new Block
+                {
+                    Name = sourceBlock.Name,
+                    IconKey = sourceBlock.IconKey,
+                    SortOrder = sourceBlock.SortOrder,
+                };
+                destination.Blocks.Add(destinationBlock);
+            }
+
+            foreach (var entry in sourceBlock.Entries)
+                destinationBlock.Entries.Add(
+                    new FoodEntry
+                    {
+                        FoodId = entry.FoodId,
+                        QuantityGrams = entry.QuantityGrams,
+                    }
+                );
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        return source.Blocks.Sum(b => b.Entries.Count);
+    }
+
     public static FoodDto FoodToDto(Food food)
     {
         return new FoodDto(

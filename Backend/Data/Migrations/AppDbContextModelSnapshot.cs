@@ -32,14 +32,16 @@ namespace Backend.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DailyLogId");
+                    b.HasIndex("DailyLogId", "Name")
+                        .IsUnique();
 
                     b.ToTable("Blocks");
                 });

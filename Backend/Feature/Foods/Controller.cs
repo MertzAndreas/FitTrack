@@ -112,6 +112,72 @@ public static class FoodEndpoints
             }
         );
 
+        log.MapPost(
+            "/blocks/{sourceId}/{destinationId}",
+            async (int sourceId, int destinationId, AppDbContext db, CancellationToken ct) =>
+            {
+                if (sourceId == destinationId)
+                    return Results.BadRequest("Can't copy from and to the same block");
+
+                var source = await db
+                    .Blocks.AsNoTracking()
+                    .Include(b => b.Entries)
+                    .FirstOrDefaultAsync(b => b.Id == sourceId, ct);
+
+                if (source is null)
+                    return Results.BadRequest($"BlockId {sourceId} doesn't exist");
+
+                if (source.Entries.Count == 0)
+                    return Results.NoContent();
+
+                var destination = await db
+                    .Blocks.Include(b => b.Entries)
+                    .FirstOrDefaultAsync(b => b.Id == destinationId, ct);
+
+                if (destination is null)
+                    return Results.BadRequest($"BlockId {destinationId} doesn't exist");
+
+                foreach (var entry in source.Entries)
+                    destination.Entries.Add(
+                        new FoodEntry
+                        {
+                            FoodId = entry.FoodId,
+                            QuantityGrams = entry.QuantityGrams,
+                        }
+                    );
+
+                await db.SaveChangesAsync(ct);
+
+                return Results.NoContent();
+            }
+        );
+
+        log.MapPost(
+            "/days/{sourceDate}/{destinationDate}/copy",
+            async (
+                DateOnly sourceDate,
+                DateOnly destinationDate,
+                AppDbContext db,
+                CancellationToken ct
+            ) =>
+            {
+                if (sourceDate == destinationDate)
+                    return Results.BadRequest("Can't copy from and to the same day");
+
+                var copiedEntries = await FoodService.CopyDayAsync(
+                    db,
+                    sourceDate,
+                    destinationDate,
+                    ct
+                );
+
+                if (copiedEntries is null)
+                    return Results.NotFound($"No food log for {sourceDate}");
+
+                return Results.Ok(new { copiedEntries = copiedEntries.Value });
+            }
+        );
+
         static IResult? ValidateFood(PostFoodDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || !dto.Name.Any(char.IsLetterOrDigit))
