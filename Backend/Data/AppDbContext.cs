@@ -10,12 +10,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Measurement> Measurements => Set<Measurement>();
     public DbSet<TrackedMeasurement> TrackedMeasurements => Set<TrackedMeasurement>();
     public DbSet<Food> Foods => Set<Food>();
+    public DbSet<FoodEntry> FoodEntries => Set<FoodEntry>();
+    public DbSet<DailyLog> DailyLogs => Set<DailyLog>();
+    public DbSet<Block> Blocks => Set<Block>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder
+            .Entity<FoodEntry>()
+            .HasOne(fe => fe.Food)
+            .WithMany()
+            .HasForeignKey(fe => fe.FoodId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<DailyLog>()
+            .HasOne(dl => dl.WeightEntry)
+            .WithOne(we => we.DailyLog)
+            .HasForeignKey<WeightEntry>(we => we.DailyLogId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<DailyLog>()
+            .HasMany(dl => dl.Blocks)
+            .WithOne(b => b.DailyLog)
+            .HasForeignKey(b => b.DailyLogId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<Block>()
+            .HasMany(b => b.Entries)
+            .WithOne(fe => fe.Block)
+            .HasForeignKey(fe => fe.BlockId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-        modelBuilder.Entity<WeightEntry>().HasIndex(w => w.Date).IsUnique();
+        modelBuilder.Entity<DailyLog>().HasIndex(w => w.Date).IsUnique();
 
         modelBuilder.Entity<TrackedMeasurement>().HasKey(t => t.Site);
 

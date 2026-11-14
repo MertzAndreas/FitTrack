@@ -17,6 +17,50 @@ namespace Backend.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
+            modelBuilder.Entity("Backend.Models.Block", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DailyLogId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IconKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.ToTable("Blocks");
+                });
+
+            modelBuilder.Entity("Backend.Models.DailyLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.ToTable("DailyLogs");
+                });
+
             modelBuilder.Entity("Backend.Models.Food", b =>
                 {
                     b.Property<int>("Id")
@@ -70,6 +114,30 @@ namespace Backend.Data.Migrations
                     b.ToTable("Foods");
                 });
 
+            modelBuilder.Entity("Backend.Models.FoodEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BlockId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FoodId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("QuantityGrams")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockId");
+
+                    b.HasIndex("FoodId");
+
+                    b.ToTable("FoodEntries");
+                });
+
             modelBuilder.Entity("Backend.Models.Measurement", b =>
                 {
                     b.Property<int>("Id")
@@ -108,15 +176,15 @@ namespace Backend.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("DailyLogId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double>("WeightKg")
                         .HasColumnType("REAL");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Date")
+                    b.HasIndex("DailyLogId")
                         .IsUnique();
 
                     b.ToTable("WeightEntries");
@@ -149,6 +217,36 @@ namespace Backend.Data.Migrations
                     b.ToTable("WeightPhotos");
                 });
 
+            modelBuilder.Entity("Backend.Models.Block", b =>
+                {
+                    b.HasOne("Backend.Models.DailyLog", "DailyLog")
+                        .WithMany("Blocks")
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyLog");
+                });
+
+            modelBuilder.Entity("Backend.Models.FoodEntry", b =>
+                {
+                    b.HasOne("Backend.Models.Block", "Block")
+                        .WithMany("Entries")
+                        .HasForeignKey("BlockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Food", "Food")
+                        .WithMany()
+                        .HasForeignKey("FoodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Block");
+
+                    b.Navigation("Food");
+                });
+
             modelBuilder.Entity("Backend.Models.Measurement", b =>
                 {
                     b.HasOne("Backend.Models.WeightEntry", "WeightEntry")
@@ -160,6 +258,17 @@ namespace Backend.Data.Migrations
                     b.Navigation("WeightEntry");
                 });
 
+            modelBuilder.Entity("Backend.Models.WeightEntry", b =>
+                {
+                    b.HasOne("Backend.Models.DailyLog", "DailyLog")
+                        .WithOne("WeightEntry")
+                        .HasForeignKey("Backend.Models.WeightEntry", "DailyLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyLog");
+                });
+
             modelBuilder.Entity("Backend.Models.WeightPhoto", b =>
                 {
                     b.HasOne("Backend.Models.WeightEntry", "WeightEntry")
@@ -167,6 +276,18 @@ namespace Backend.Data.Migrations
                         .HasForeignKey("WeightEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("WeightEntry");
+                });
+
+            modelBuilder.Entity("Backend.Models.Block", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Backend.Models.DailyLog", b =>
+                {
+                    b.Navigation("Blocks");
 
                     b.Navigation("WeightEntry");
                 });

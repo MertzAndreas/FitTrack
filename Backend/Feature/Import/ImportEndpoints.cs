@@ -50,14 +50,27 @@ public static class ImportEndpoints
             .GroupBy(r => DateOnly.FromDateTime(r.Date))
             .ToDictionary(g => g.Key, g => g.Last().WeightKg);
 
-        var existing = await db.WeightEntries.ToDictionaryAsync(w => w.Date, ct);
+        var existing = await db
+            .WeightEntries.Include(w => w.DailyLog)
+            .ToDictionaryAsync(w => w.DailyLog.Date, ct);
+        var dailyLogs = await db.DailyLogs.ToDictionaryAsync(d => d.Date, ct);
 
         foreach (var (date, weightKg) in weights)
         {
             if (existing.TryGetValue(date, out var entry))
+            {
                 entry.WeightKg = weightKg;
-            else
-                db.WeightEntries.Add(new WeightEntry { Date = date, WeightKg = weightKg });
+                continue;
+            }
+
+            if (!dailyLogs.TryGetValue(date, out var dailyLog))
+            {
+                dailyLog = new DailyLog { Date = date };
+                db.DailyLogs.Add(dailyLog);
+                dailyLogs[date] = dailyLog;
+            }
+
+            db.WeightEntries.Add(new WeightEntry { DailyLog = dailyLog, WeightKg = weightKg });
         }
 
         await db.SaveChangesAsync(ct);

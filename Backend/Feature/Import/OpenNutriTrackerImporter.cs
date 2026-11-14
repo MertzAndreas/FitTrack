@@ -41,7 +41,10 @@ public static class OpenNutriTrackerImporter
             byDate[date] = record.WeightKg;
         }
 
-        var existing = await db.WeightEntries.ToDictionaryAsync(w => w.Date, ct);
+        var existing = await db
+            .WeightEntries.Include(w => w.DailyLog)
+            .ToDictionaryAsync(w => w.DailyLog.Date, ct);
+        var dailyLogs = await db.DailyLogs.ToDictionaryAsync(d => d.Date, ct);
         var inserted = 0;
         var updated = 0;
         var unchanged = 0;
@@ -61,7 +64,14 @@ public static class OpenNutriTrackerImporter
                 continue;
             }
 
-            db.WeightEntries.Add(new WeightEntry { Date = date, WeightKg = weightKg });
+            if (!dailyLogs.TryGetValue(date, out var dailyLog))
+            {
+                dailyLog = new DailyLog { Date = date };
+                db.DailyLogs.Add(dailyLog);
+                dailyLogs[date] = dailyLog;
+            }
+
+            db.WeightEntries.Add(new WeightEntry { DailyLog = dailyLog, WeightKg = weightKg });
             inserted++;
         }
 

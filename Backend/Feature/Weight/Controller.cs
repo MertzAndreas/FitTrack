@@ -64,9 +64,10 @@ public static class WeightEndpoints
             {
                 var entries = await db
                     .WeightEntries.AsNoTracking()
+                    .Include(w => w.DailyLog)
                     .Include(w => w.Measurements)
                     .Include(w => w.Photos)
-                    .OrderBy(w => w.Date)
+                    .OrderBy(w => w.DailyLog.Date)
                     .ToListAsync(ct);
 
                 return entries.Select(ToDto).ToList();
@@ -93,14 +94,25 @@ public static class WeightEndpoints
                         return Results.BadRequest("Unknown measurement site.");
 
                     var entry = await db
-                        .WeightEntries.Include(w => w.Measurements)
+                        .WeightEntries.Include(w => w.DailyLog)
+                        .Include(w => w.Measurements)
                         .Include(w => w.Photos)
-                        .FirstOrDefaultAsync(w => w.Date == form.Date, ct);
+                        .FirstOrDefaultAsync(w => w.DailyLog.Date == form.Date, ct);
 
                     var isNew = entry is null;
                     if (entry is null)
                     {
-                        entry = new WeightEntry { Date = form.Date };
+                        var dailyLog = await db.DailyLogs.FirstOrDefaultAsync(
+                            d => d.Date == form.Date,
+                            ct
+                        );
+                        if (dailyLog is null)
+                        {
+                            dailyLog = new DailyLog { Date = form.Date };
+                            db.DailyLogs.Add(dailyLog);
+                        }
+
+                        entry = new WeightEntry { DailyLog = dailyLog };
                         db.WeightEntries.Add(entry);
                     }
 
@@ -225,7 +237,7 @@ public static class WeightEndpoints
     private static WeightEntryDto ToDto(WeightEntry entry) =>
         new(
             entry.Id,
-            entry.Date,
+            entry.DailyLog.Date,
             entry.WeightKg,
             [
                 .. entry.Measurements.Select(m => new MeasurementDto(
