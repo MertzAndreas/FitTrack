@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Sylvan.Data.Csv;
 
-namespace Backend.Feature.Food;
+namespace Backend.Feature.Foods;
 
 public static class FoodSeeder
 {
@@ -172,20 +172,22 @@ public static class FoodSeeder
             var alcohol = iAlcohol >= 0 ? GetDouble(csv, iAlcohol) ?? 0 : 0;
 
             if (
-                !IsInRange(fat.Value, 100)
-                || !IsInRange(carbs.Value, 100)
-                || !IsInRange(protein.Value, 100)
-                || !IsInRange(kcal.Value, 900)
-                || !IsInRange(alcohol, 100)
+                !FoodService.IsMacrosInRange(
+                    kcal.Value,
+                    protein.Value,
+                    fat.Value,
+                    carbs.Value,
+                    alcohol
+                )
             )
             {
                 skippedOutOfRange++;
                 continue;
             }
 
-            var expectedKcal = 4 * protein.Value + 4 * carbs.Value + 9 * fat.Value + 7 * alcohol;
-            var tolerance = Math.Max(10, kcal.Value * 0.20);
-            if (Math.Abs(expectedKcal - kcal.Value) > tolerance)
+            if (
+                !FoodService.MacrosAddUp(kcal.Value, protein.Value, fat.Value, carbs.Value, alcohol)
+            )
             {
                 skippedInconsistent++;
                 continue;
@@ -224,8 +226,6 @@ public static class FoodSeeder
 
         return (int)written;
     }
-
-    private static bool IsInRange(double value, double max) => value >= 0 && value <= max;
 
     private static string? GetText(CsvDataReader csv, int ordinal)
     {

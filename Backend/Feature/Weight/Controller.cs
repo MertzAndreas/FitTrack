@@ -247,6 +247,6 @@ public static class WeightEndpoints
                     m.LengthCm
                 )),
             ],
-            entry.Photos.Select(p => new WeightPhotoDto(p.Id)).ToList()
+            [.. entry.Photos.Select(p => new WeightPhotoDto(p.Id))]
         );
 }

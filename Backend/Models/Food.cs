@@ -10,15 +10,7 @@ public class Food
 {
     public int Id { get; set; }
 
-    /// <summary>Barcode from Open Food Facts. Null for user-created foods without one.</summary>
-    public string? Code { get; set; }
-
     public string ProductName { get; set; } = null!;
-    public string? Brands { get; set; }
-    public string? ServingSize { get; set; }
-    public double? ServingQuantity { get; set; }
-    public string? ImageUrl { get; set; }
-    public string? ImageSmallUrl { get; set; }
 
     /// <summary>Nutrition values per 100 g.</summary>
     public double KcalPer100g { get; set; }
@@ -28,4 +20,12 @@ public class Food
     public double ProteinPer100g { get; set; }
 
     public FoodSource Source { get; set; }
+
+    /// <summary>Barcode from Open Food Facts. Null for user-created foods without one.</summary>
+    public string? Code { get; set; }
+    public string? Brands { get; set; }
+    public string? ServingSize { get; set; }
+    public double? ServingQuantity { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? ImageSmallUrl { get; set; }
 }
