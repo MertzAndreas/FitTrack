@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { format, isSameDay } from "date-fns";
+import { useState } from "react";
+import { format, startOfDay } from "date-fns";
 
 import {
   AlertDialog,
@@ -127,10 +127,15 @@ export const WeightOverview = ({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = entries.find((e) => e.id === selectedId);
 
-  const loggedDays = useMemo(() => entries.map((e) => e.date), [entries]);
+  const entryByDay = new Map(
+    entries.map((e) => [startOfDay(e.date).getTime(), e] as const),
+  );
+  const loggedDays = entries.map((e) => startOfDay(e.date));
+  const today = startOfDay(new Date());
 
   const handleSelect = (day: Date | undefined) => {
-    const entry = day && entries.find((e) => isSameDay(e.date, day));
+    if (!day) return;
+    const entry = entryByDay.get(startOfDay(day).getTime());
     if (entry) setSelectedId(entry.id);
   };
 
@@ -149,11 +154,19 @@ export const WeightOverview = ({
         <Calendar
           mode="single"
           className="w-full"
+          showOutsideDays={false}
+          selected={selected?.date}
           onSelect={handleSelect}
+          disabled={[
+            { after: today },
+            (day: Date) => !entryByDay.has(startOfDay(day).getTime()),
+          ]}
           modifiers={{ logged: loggedDays }}
           modifiersClassNames={{
-            logged: "bg-primary/20 font-semibold text-primary rounded-md",
+            logged:
+              "relative [&>button]:font-extrabold after:pointer-events-none after:absolute after:bottom-3 after:left-1/2 after:z-20 after:size-1.5 after:-translate-x-1/2 after:bg-primary",
           }}
+          classNames={{ disabled: "text-muted-foreground/70" }}
         />
       </CardContent>
 

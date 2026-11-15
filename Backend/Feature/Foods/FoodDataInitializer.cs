@@ -2,7 +2,7 @@ using Backend.Data;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Feature.Food;
+namespace Backend.Feature.Foods;
 
 public static class FoodDataInitializer
 {
@@ -18,9 +18,7 @@ public static class FoodDataInitializer
             return;
 
         var configuredPath = configuration["FoodData:CsvPath"] ?? "../OFF.csv.gz";
-        var csvPath = Path.GetFullPath(
-            Path.Combine(environment.ContentRootPath, configuredPath)
-        );
+        var csvPath = Path.GetFullPath(Path.Combine(environment.ContentRootPath, configuredPath));
 
         if (!File.Exists(csvPath))
             throw new FileNotFoundException(

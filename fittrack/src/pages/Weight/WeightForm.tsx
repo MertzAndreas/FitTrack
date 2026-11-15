@@ -1,4 +1,4 @@
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
 import { format } from "date-fns";
@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import { useMemo, useRef } from "react";
 import type { MeasurementSite, WeightEntry } from "./types";
 import {
@@ -21,12 +21,7 @@ import {
   useWeightEntries,
 } from "./use-weight-entries";
 import { WeightPhotos } from "./WeightPhotos";
-import {
-  getDefaultValues,
-  schema,
-  toFormValues,
-  type FormValues,
-} from "./weight-form-schema";
+import { schema, toFormValues, type FormValues } from "./weight-form-schema";
 
 const blankToUndefined = (value: unknown) => {
   if (typeof value !== "string") return value;
@@ -49,73 +44,86 @@ const FormCard = ({
 );
 
 type WeightFormProps = {
-  entry?: WeightEntry;
-  onDone?: () => void;
+  date: string;
+  onDateChange: (date: string) => void;
 };
 
-export const WeightForm = ({ entry, onDone }: WeightFormProps) => {
+export const WeightForm = ({ date, onDateChange }: WeightFormProps) => {
   const sitesQuery = useMeasurementSites();
   const trackedQuery = useTrackedMeasurements();
+  const entriesQuery = useWeightEntries();
 
-  if (!entry && (sitesQuery.isPending || trackedQuery.isPending))
+  if (
+    sitesQuery.isPending ||
+    trackedQuery.isPending ||
+    entriesQuery.isPending
+  ) {
     return (
-      <FormCard entry={entry}>
+      <FormCard>
         <p className="text-sm text-muted-foreground">Loading measurements…</p>
       </FormCard>
     );
+  }
 
-  if (!entry && (!sitesQuery.data || !trackedQuery.data))
+  if (!sitesQuery.data || !trackedQuery.data || !entriesQuery.data) {
     return (
-      <FormCard entry={entry}>
+      <FormCard>
         <p className="text-sm text-muted-foreground">
           Could not load measurements.
         </p>
       </FormCard>
     );
+  }
+
+  const entries = entriesQuery.data;
+  const entry = entries.find((e) => format(e.date, "yyyy-MM-dd") === date);
 
   return (
-    <WeightFormFields
+    <WeightEntryForm
+      key={`${date}-${entry?.id ?? "new"}`}
+      date={date}
       entry={entry}
-      onDone={onDone}
-      sites={sitesQuery.data ?? []}
-      trackedSites={trackedQuery.data ?? []}
+      entries={entries}
+      sites={sitesQuery.data}
+      trackedSites={trackedQuery.data}
+      onDateChange={onDateChange}
     />
   );
 };
 
-type WeightFormFieldsProps = WeightFormProps & {
+type WeightEntryFormProps = {
+  date: string;
+  entry?: WeightEntry;
+  entries: WeightEntry[];
   sites: MeasurementSite[];
   trackedSites: number[];
+  onDateChange: (date: string) => void;
 };
 
-const WeightFormFields = ({
+const WeightEntryForm = ({
+  date,
   entry,
-  onDone,
+  entries,
   sites,
   trackedSites,
-}: WeightFormFieldsProps) => {
+  onDateChange,
+}: WeightEntryFormProps) => {
   const photosRef = useRef<HTMLInputElement>(null);
   const {
     register,
     handleSubmit,
-    reset,
     control,
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: entry
-      ? toFormValues(entry)
-      : getDefaultValues(trackedSites, sites),
+    defaultValues: toFormValues(sites, trackedSites, entry, date),
   });
 
   const { fields } = useFieldArray({
     control,
     name: "measurements",
   });
-
-  const { data: entries = [] } = useWeightEntries();
-  const date = useWatch({ control, name: "date" });
 
   const lastValues = useMemo(() => {
     const values = new Map<number, number>();
@@ -128,6 +136,13 @@ const WeightFormFields = ({
   }, [entries, date]);
 
   const saveEntry = useUpsertWeightEntry();
+
+  const dateField = register("date");
+
+  const handleDateChange = (event: ChangeEvent<HTMLInputElement>) => {
+    dateField.onChange(event);
+    onDateChange(event.target.value);
+  };
 
   const onSave = (data: FormValues) => {
     const formData = new FormData();
@@ -147,9 +162,8 @@ const WeightFormFields = ({
 
     saveEntry.mutate(formData, {
       onSuccess: () => {
-        reset(getDefaultValues(trackedSites, sites));
+        setValue("photos", []);
         if (photosRef.current) photosRef.current.value = "";
-        onDone?.();
       },
     });
   };
@@ -175,7 +189,13 @@ const WeightFormFields = ({
           </Field>
           <Field data-invalid={!!errors.date}>
             <FieldLabel htmlFor="date">Date</FieldLabel>
-            <Input id="date" type="date" {...register("date")} />
+            <Input
+              id="date"
+              max={format(new Date(), "yyyy-MM-dd")}
+              type="date"
+              {...dateField}
+              onChange={handleDateChange}
+            />
             <FieldError errors={[errors.date]} />
           </Field>
         </FieldGroup>
@@ -228,16 +248,6 @@ const WeightFormFields = ({
         )}
 
         <div className="mt-auto flex gap-2">
-          {entry && (
-            <Button
-              className="flex-1"
-              variant="outline"
-              type="button"
-              onClick={onDone}
-            >
-              Cancel
-            </Button>
-          )}
           <Button className="flex-1" type="submit">
             Save
           </Button>

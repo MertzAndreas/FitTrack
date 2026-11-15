@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,9 @@ import WeightStats from "./WeightStats";
 
 const Weight = () => {
   const { data, error, refetch } = useWeightEntries();
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   const entries = data ?? [];
-  const editingEntry = entries.find((e) => e.id === editingId);
 
   return (
     <div className="w-full flex flex-col gap-4 md:p-4 mx-auto max-w-6xl">
@@ -39,16 +39,12 @@ const Weight = () => {
       {data ? <WeightStats data={entries} /> : null}
 
       <div className="gap-4 grid md:grid-cols-2 items-stretch">
-        <WeightForm
-          key={editingId ?? "new"}
-          entry={editingEntry}
-          onDone={() => setEditingId(null)}
-        />
+        <WeightForm date={date} onDateChange={setDate} />
 
         {data ? (
           <WeightOverview
             entries={entries}
-            onEdit={(entry) => setEditingId(entry.id)}
+            onEdit={(entry) => setDate(format(entry.date, "yyyy-MM-dd"))}
           />
         ) : null}
       </div>

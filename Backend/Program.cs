@@ -1,5 +1,5 @@
 using Backend.Data;
-using Backend.Feature.Food;
+using Backend.Feature.Foods;
 using Backend.Feature.Import;
 using Backend.Feature.Photos;
 using Backend.Feature.Weight;
@@ -19,12 +19,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    await FoodDataInitializer.EnsureSeededAsync(
-        db,
-        app.Configuration,
-        app.Environment,
-        app.Logger
-    );
+    await FoodDataInitializer.EnsureSeededAsync(db, app.Configuration, app.Environment, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())
@@ -37,5 +32,6 @@ app.UseHttpsRedirection();
 
 WeightEndpoints.Map(app);
 ImportEndpoints.Map(app);
+FoodEndpoints.Map(app);
 
 app.Run();
