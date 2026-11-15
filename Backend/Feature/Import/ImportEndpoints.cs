@@ -9,7 +9,7 @@ namespace Backend.Feature.Import;
 
 public static class ImportEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         app.MapPost(
                 "/import/weight",

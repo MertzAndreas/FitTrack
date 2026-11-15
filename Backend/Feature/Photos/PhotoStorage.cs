@@ -7,9 +7,12 @@ public class PhotoStorage
 
     private readonly string _dir;
 
-    public PhotoStorage(IWebHostEnvironment env)
+    public PhotoStorage(IWebHostEnvironment env, IConfiguration configuration)
     {
-        _dir = Path.Combine(env.ContentRootPath, "..", "uploads");
+        var configured = configuration["Storage:UploadsPath"];
+        _dir = string.IsNullOrWhiteSpace(configured)
+            ? Path.Combine(env.ContentRootPath, "..", "uploads")
+            : Path.GetFullPath(configured);
         Directory.CreateDirectory(_dir);
     }
 

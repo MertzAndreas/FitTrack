@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 public static class WeightEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/weight");
 

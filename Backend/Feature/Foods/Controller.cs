@@ -6,7 +6,7 @@ namespace Backend.Feature.Foods;
 
 public static class FoodEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         var foods = app.MapGroup("/foods");
         var log = app.MapGroup("/food-log");

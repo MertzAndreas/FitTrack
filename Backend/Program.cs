@@ -28,10 +28,15 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-WeightEndpoints.Map(app);
-ImportEndpoints.Map(app);
-FoodEndpoints.Map(app);
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+var api = app.MapGroup("/api");
+WeightEndpoints.Map(api);
+ImportEndpoints.Map(api);
+FoodEndpoints.Map(api);
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
