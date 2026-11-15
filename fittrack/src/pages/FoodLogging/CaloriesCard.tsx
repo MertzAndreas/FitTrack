@@ -118,7 +118,7 @@ type CaloriesCardProps = {
   blocks: Block[];
 };
 export const CaloriesCard = ({ blocks }: CaloriesCardProps) => {
-  const { date, isToday } = useSelectedDay();
+  const { isToday } = useSelectedDay();
   const { kcal: consumed } = calculateMealsMacros(blocks);
 
   const isOver = consumed > GOAL;
@@ -129,7 +129,6 @@ export const CaloriesCard = ({ blocks }: CaloriesCardProps) => {
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <CardTitle>{isToday ? "Today's Calories" : "Calories"}</CardTitle>
-        <CardDescription>{format(date, "EEEE, MMM d, yyyy")}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <div className="relative mx-auto aspect-square max-h-62.5">

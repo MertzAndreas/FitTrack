@@ -12,10 +12,12 @@ const Dashboard = () => {
 
   return (
     <div
-      className="w-full flex flex-col gap-4 md:p-4 mx-auto max-w-6xl touch-pan-y"
+      className="w-full flex flex-col gap-2 md:px-4 mx-auto max-w-6xl touch-pan-y"
       {...swipeHandlers}
     >
-      <DayNavigator />
+      <div className="sticky top-0 py-2 z-10 bg-background">
+        <DayNavigator />
+      </div>
       <CaloriesCard blocks={blocks || []} />
       <FoodLoggingOverview key={dateKey} blocks={blocks || []} />
     </div>
