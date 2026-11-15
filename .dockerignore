@@ -1,0 +1,13 @@
+.git
+.github
+**/bin
+**/obj
+**/node_modules
+fittrack/dist
+Backend/*.db
+Backend/*.db-shm
+Backend/*.db-wal
+uploads
+seed
+OFF.csv.gz
+README.md
