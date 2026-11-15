@@ -33,9 +33,9 @@ import {
 import { useSelectedDay } from "./use-selected-day";
 
 const GOAL = 2000;
-const SIZE = 320; // px, change this one number to resize everything
+const SIZE = 280; // px, change this one number to resize everything
 const OUTER = SIZE * 0.38;
-const INNER = SIZE * 0.32; // ring thickness = OUTER - INNER
+const INNER = SIZE * 0.3; // ring thickness = OUTER - INNER
 
 const chartConfig = {
   value: { label: "Calories" },
@@ -78,16 +78,12 @@ const Ring = ({ value, color, withBackground, children }: RingProps) => (
         <PolarGrid
           gridType="circle"
           radialLines={false}
-          className="first:fill-muted last:fill-background"
+          className="fill-accent first:fill-card"
+          stroke="none"
           polarRadius={[OUTER, INNER]}
         />
       )}
-      <RadialBar
-        dataKey="value"
-        fill={color}
-        cornerRadius={10}
-        background={withBackground}
-      />
+      <RadialBar dataKey="value" fill={color} background={withBackground} />
       <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
         {children}
       </PolarRadiusAxis>
@@ -136,7 +132,7 @@ export const CaloriesCard = ({ blocks }: CaloriesCardProps) => {
         <CardDescription>{format(date, "EEEE, MMM d, yyyy")}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <div className="relative mx-auto aspect-square max-h-[300px]">
+        <div className="relative mx-auto aspect-square max-h-62.5">
           <Ring value={base} color="var(--chart-1)" withBackground>
             <Label
               content={({ viewBox }) => {

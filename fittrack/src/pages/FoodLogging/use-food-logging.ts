@@ -27,6 +27,13 @@ export const useSearchFood = (query: string) =>
       }),
   });
 
+
+export const useBarcode = () =>
+  useMutation({
+    mutationFn: (code: string) =>
+      api.get<Food>(`/foods/by-code/${encodeURIComponent(code)}`),
+  });
+
 export const useSubmitFoodEntries = () => {
   const queryClient = useQueryClient();
 

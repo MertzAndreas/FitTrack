@@ -1,7 +1,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, Camera } from "lucide-react";
 import { useState } from "react";
+import { Scanner } from "@yudiel/react-qr-scanner";
 import { Label } from "@/components/ui/label";
 import {
   type FoodItem,
@@ -13,10 +14,15 @@ import {
 import { FoodEntryRow } from "./FoodEntryRow";
 import { ImageBox } from "./ImageBox";
 import { MacroView } from "./MacroView";
-import { useSearchFood, useSubmitFoodEntries } from "./use-food-logging";
+import {
+  useBarcode,
+  useSearchFood,
+  useSubmitFoodEntries,
+} from "./use-food-logging";
 import { useSelectedDay } from "./use-selected-day";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 
 type Unit = "g" | "serving";
 
@@ -41,16 +47,53 @@ const SearchFoods = ({
   const [food, setFood] = useState<Food | null>(null);
   const [unit, setUnit] = useState<Unit>("g");
   const [amount, setAmount] = useState<number>(100);
+  const [camera, setCamera] = useState<boolean>(false);
+  const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [lastScan, setLastScan] = useState<{
+    code: string;
+    found: boolean;
+  } | null>(null);
   const [foodEntries, setFoodEntries] = useState<DraftFoodItem[]>([]);
   const { data } = useSearchFood(query);
   const { dateKey } = useSelectedDay();
   const { mutate, isPending } = useSubmitFoodEntries();
+  const { mutate: lookupBarcode, isPending: isLookingUp } = useBarcode();
 
   const handleSelectFood = (nextFood: Food) => {
     const serving = getServingInfo(nextFood);
     setUnit(serving ? "serving" : "g");
     setAmount(serving ? 1 : 100);
     setFood(nextFood);
+  };
+
+  const handleScan = (codes: Array<{ rawValue: string }>) => {
+    const code = codes[0]?.rawValue;
+    if (!code || isLookingUp) return;
+
+    setScannedCode(code);
+    setLastScan(null);
+    toast.add({ title: `Scanning ${code}`, type: "info" });
+
+    lookupBarcode(code, {
+      onSuccess: (found) => {
+        setLastScan({ code, found: true });
+        setCamera(false);
+        handleSelectFood(found);
+        toast.add({
+          title: "Product found",
+          description: found.name,
+          type: "success",
+        });
+      },
+      onError: () => {
+        setLastScan({ code, found: false });
+        toast.add({
+          title: "Product not found",
+          description: `No database entry for ${code}.`,
+          type: "error",
+        });
+      },
+    });
   };
 
   const handleSubmitFoodEntries = () => {
@@ -65,20 +108,47 @@ const SearchFoods = ({
     );
   };
 
+  if (camera) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex min-h-10 items-center justify-center border bg-muted/50 px-3 text-center text-sm">
+          {isLookingUp && scannedCode ? (
+            <span>Looking up {scannedCode}…</span>
+          ) : lastScan && !lastScan.found ? (
+            <span className="text-destructive">
+              {lastScan.code} not found in the database
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              Point the camera at a barcode
+            </span>
+          )}
+        </div>
+        <Scanner onScan={handleScan} />
+      </div>
+    );
+  }
+
   if (food == null) {
     return (
       <Card data-block-id={blockId}>
         <CardHeader>
           <CardTitle>Search foods</CardTitle>
-          <Input
-            autoFocus
-            value={query}
-            onChange={(e) => setquery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key == "Enter" && data?.[0] != null)
-                handleSelectFood(data[0]);
-            }}
-          />
+          <div className="flex flex-row">
+            <Input
+              className="p-0 h-11"
+              autoFocus
+              value={query}
+              onChange={(e) => setquery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key == "Enter" && data?.[0] != null)
+                  handleSelectFood(data[0]);
+              }}
+            />
+            <Button onClick={() => setCamera(true)} size={"lg"}>
+              <Camera />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <ul className="flex flex-col divide-y bg-muted/50">

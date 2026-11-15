@@ -55,7 +55,7 @@ export const CopyBlockDrawer = ({
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4">
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 overflow-auto p-4">
           <Calendar
             mode="single"
             numberOfMonths={2}

@@ -47,7 +47,7 @@ export const CopyDayDrawer = ({
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className="mx-auto min-h-0 w-full max-w-6xl flex-1 overflow-auto p-4">
           <Calendar
             mode="single"
             numberOfMonths={2}

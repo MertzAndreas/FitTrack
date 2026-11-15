@@ -89,7 +89,7 @@ export const FoodLoggingOverview = ({ blocks }: FoodLoggingOverviewProps) => {
               <DrawerDescription>{activeBlock.name}</DrawerDescription>
             )}
           </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-0">
+          <div className="mx-auto min-h-0 w-full max-w-6xl flex-1 overflow-y-auto ">
             {activeBlock && (
               <SearchFoods
                 key={activeBlock.id}

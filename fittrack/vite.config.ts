@@ -10,6 +10,7 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
+    allowedHosts: [".tail068a08.ts.net"],
     proxy: {
       '/api': {
         target: 'http://localhost:5159',
