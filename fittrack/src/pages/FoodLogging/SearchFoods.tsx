@@ -39,9 +39,11 @@ const MACRO_TILES = [
 const SearchFoods = ({
   blockId,
   onSaved,
+  inputRef,
 }: {
   blockId: number;
   onSaved?: () => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
 }) => {
   const [query, setquery] = useState<string>("");
   const [food, setFood] = useState<Food | null>(null);
@@ -137,7 +139,7 @@ const SearchFoods = ({
           <div className="flex flex-row">
             <Input
               className="p-0 h-11"
-              autoFocus
+              ref={inputRef}
               value={query}
               onChange={(e) => setquery(e.target.value)}
               onKeyDown={(e) => {

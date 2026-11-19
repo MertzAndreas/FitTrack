@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EllipsisVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export const FoodLoggingOverview = ({ blocks }: FoodLoggingOverviewProps) => {
   const [activeBlock, setActiveBlock] = useState<Block | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [copyDayOpen, setCopyDayOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { dateKey } = useSelectedDay();
   const { mutate: deleteEntry } = useDeleteFoodEntry();
 
@@ -81,7 +82,14 @@ export const FoodLoggingOverview = ({ blocks }: FoodLoggingOverviewProps) => {
         <CopyDayDrawer sourceDate={dateKey} onOpenChange={setCopyDayOpen} />
       )}
 
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} showSwipeHandle>
+      <Drawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onOpenChangeComplete={(open) => {
+          if (open) inputRef.current?.focus();
+        }}
+        showSwipeHandle
+      >
         <DrawerContent className={"h-screen"}>
           <DrawerHeader>
             <DrawerTitle>Add food</DrawerTitle>
@@ -94,6 +102,7 @@ export const FoodLoggingOverview = ({ blocks }: FoodLoggingOverviewProps) => {
               <SearchFoods
                 key={activeBlock.id}
                 blockId={activeBlock.id}
+                inputRef={inputRef}
                 onSaved={() => setDrawerOpen(false)}
               />
             )}
