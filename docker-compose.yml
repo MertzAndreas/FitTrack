@@ -10,12 +10,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__FitTrack: Data Source=/data/fittrack.db
-      FoodData__CsvPath: /seed/OFF.csv.gz
       Storage__UploadsPath: /uploads
     volumes:
       - ./data:/data
       - ./uploads:/uploads
-      - ./seed:/seed:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 30s

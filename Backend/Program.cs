@@ -19,7 +19,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    await FoodDataInitializer.EnsureSeededAsync(db, app.Configuration, app.Environment, app.Logger);
+    await FoodDataInitializer.EnsureSeededAsync(db, app.Configuration, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())

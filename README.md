@@ -6,19 +6,18 @@ and stores data in SQLite.
 ## Run
 
 ```bash
-mkdir -p data uploads seed
-curl -fL --progress-bar -o seed/OFF.csv.gz https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
+mkdir -p data uploads
 docker compose up -d
 ```
 
-Open http://localhost:8080. The first start imports the food database;
+Open http://localhost:8080. The first start downloads and imports the Open Food
+Facts food database.
 `docker compose logs -f fittrack` shows progress.
 
 ## Data
 
 - `data/fittrack.db` — database
 - `uploads/` — progress photos
-- `seed/OFF.csv.gz` — food export, only read when the database has no food
 
 Stop the container and copy `data/` and `uploads/` to back it up.
 
@@ -34,5 +33,5 @@ cd fittrack && pnpm install && pnpm dev    # http://localhost:5173
 | Variable | Default |
 |---|---|
 | `ConnectionStrings__FitTrack` | `Data Source=/data/fittrack.db` |
-| `FoodData__CsvPath` | `/seed/OFF.csv.gz` |
+| `FoodData__SourceUrl` | `https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz` |
 | `Storage__UploadsPath` | `/uploads` |

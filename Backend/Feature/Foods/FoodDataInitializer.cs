@@ -6,33 +6,62 @@ namespace Backend.Feature.Foods;
 
 public static class FoodDataInitializer
 {
+    private const string DefaultSourceUrl =
+        "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz";
+
     public static async Task EnsureSeededAsync(
         AppDbContext db,
         IConfiguration configuration,
-        IHostEnvironment environment,
         ILogger logger,
         CancellationToken ct = default
     )
     {
         if (await db.Foods.AnyAsync(f => f.Source == FoodSource.OpenFoodFacts, ct))
+        {
+            logger.LogInformation("Food data already present, skipping Open Food Facts download.");
             return;
+        }
 
-        var configuredPath = configuration["FoodData:CsvPath"] ?? "../OFF.csv.gz";
-        var csvPath = Path.GetFullPath(Path.Combine(environment.ContentRootPath, configuredPath));
+        var sourceUrl = configuration["FoodData:SourceUrl"];
+        if (string.IsNullOrWhiteSpace(sourceUrl))
+            sourceUrl = DefaultSourceUrl;
 
-        if (!File.Exists(csvPath))
-            throw new FileNotFoundException(
-                "The food database is empty and the Open Food Facts export was not found at "
-                    + $"'{csvPath}'. Set FoodData:CsvPath to the export location.",
-                csvPath
+        if (
+            !Uri.TryCreate(sourceUrl, UriKind.Absolute, out var sourceUri)
+            || (
+                !string.Equals(
+                    sourceUri.Scheme,
+                    Uri.UriSchemeHttp,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                && !string.Equals(
+                    sourceUri.Scheme,
+                    Uri.UriSchemeHttps,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        )
+            throw new InvalidOperationException(
+                $"FoodData:SourceUrl must be an absolute http(s) URL, but was '{sourceUrl}'."
             );
 
-        logger.LogInformation(
-            "Seeding food database from {Path}. This only happens on the first run and takes a few minutes.",
-            csvPath
+        logger.LogInformation("Downloading Open Food Facts data from {Url}", sourceUri);
+
+        using var client = new HttpClient(
+            new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(30) }
+        );
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "FitTrack (+https://github.com/mertzandreas/fittrack)"
         );
 
-        var seeded = await FoodSeeder.SeedAsync(db, csvPath, logger, ct);
-        logger.LogInformation("Food database seeded with {Count:N0} foods.", seeded);
+        using var response = await client.GetAsync(
+            sourceUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            ct
+        );
+        response.EnsureSuccessStatusCode();
+
+        await using Stream offStream = await response.Content.ReadAsStreamAsync(ct);
+        await FoodSeeder.SeedAsync(db, offStream, logger, ct);
     }
 }

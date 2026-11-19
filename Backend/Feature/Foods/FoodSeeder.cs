@@ -29,13 +29,56 @@ public static class FoodSeeder
         "proteins_100g",
     ];
 
-    public static async Task<int> SeedAsync(
+    public static async Task SeedAsync(
         AppDbContext db,
-        string csvPath,
+        Stream stream,
         ILogger logger,
         CancellationToken ct = default
     )
     {
+        await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
+        using var text = new StreamReader(
+            gzip,
+            System.Text.Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1 << 16
+        );
+        using var csv = CsvDataReader.Create(
+            text,
+            new CsvDataReaderOptions
+            {
+                HasHeaders = true,
+                Delimiter = '\t',
+                Culture = CultureInfo.InvariantCulture,
+                BufferSize = 1 << 20,
+            }
+        );
+
+        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < csv.FieldCount; i++)
+            ordinals[csv.GetName(i)] = i;
+
+        var missing = RequiredColumns.Where(c => !ordinals.ContainsKey(c)).ToArray();
+        if (missing.Length > 0)
+            throw new InvalidDataException(
+                $"The Open Food Facts export is missing required columns: {string.Join(", ", missing)}."
+            );
+
+        var iCode = ordinals["code"];
+        var iName = ordinals["product_name"];
+        var iBrands = ordinals["brands"];
+        var iSize = ordinals["serving_size"];
+        var iQuantity = ordinals["serving_quantity"];
+        var iImage = ordinals["image_url"];
+        var iImageSmall = ordinals["image_small_url"];
+        var iKcal = ordinals["energy-kcal_100g"];
+        var iFat = ordinals["fat_100g"];
+        var iCarbs = ordinals["carbohydrates_100g"];
+        var iProtein = ordinals["proteins_100g"];
+        var iAlcohol = ordinals.TryGetValue("alcohol_100g", out var alcoholOrdinal)
+            ? alcoholOrdinal
+            : -1;
+
         await using var connection = new SqliteConnection(db.Database.GetConnectionString());
         await connection.OpenAsync(ct);
 
@@ -85,50 +128,6 @@ public static class FoodSeeder
         var pProtein = insert.Parameters.Add("$protein", SqliteType.Real);
         var pSource = insert.Parameters.Add("$source", SqliteType.Integer);
 
-        await using var file = File.OpenRead(csvPath);
-        await using var gzip = new GZipStream(file, CompressionMode.Decompress);
-        using var text = new StreamReader(
-            gzip,
-            System.Text.Encoding.UTF8,
-            detectEncodingFromByteOrderMarks: true,
-            bufferSize: 1 << 16
-        );
-        using var csv = CsvDataReader.Create(
-            text,
-            new CsvDataReaderOptions
-            {
-                HasHeaders = true,
-                Delimiter = '\t',
-                Culture = CultureInfo.InvariantCulture,
-                BufferSize = 1 << 20,
-            }
-        );
-
-        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
-        for (var i = 0; i < csv.FieldCount; i++)
-            ordinals[csv.GetName(i)] = i;
-
-        var missing = RequiredColumns.Where(c => !ordinals.ContainsKey(c)).ToArray();
-        if (missing.Length > 0)
-            throw new InvalidDataException(
-                $"The Open Food Facts export is missing required columns: {string.Join(", ", missing)}."
-            );
-
-        var iCode = ordinals["code"];
-        var iName = ordinals["product_name"];
-        var iBrands = ordinals["brands"];
-        var iSize = ordinals["serving_size"];
-        var iQuantity = ordinals["serving_quantity"];
-        var iImage = ordinals["image_url"];
-        var iImageSmall = ordinals["image_small_url"];
-        var iKcal = ordinals["energy-kcal_100g"];
-        var iFat = ordinals["fat_100g"];
-        var iCarbs = ordinals["carbohydrates_100g"];
-        var iProtein = ordinals["proteins_100g"];
-        var iAlcohol = ordinals.TryGetValue("alcohol_100g", out var alcoholOrdinal)
-            ? alcoholOrdinal
-            : -1;
-
         long read = 0;
         long written = 0;
         long skippedMissing = 0;
@@ -136,7 +135,7 @@ public static class FoodSeeder
         long skippedInconsistent = 0;
         var stopwatch = Stopwatch.StartNew();
 
-        while (csv.Read())
+        while (await csv.ReadAsync(ct))
         {
             read++;
 
@@ -223,8 +222,6 @@ public static class FoodSeeder
             skippedInconsistent,
             stopwatch.Elapsed
         );
-
-        return (int)written;
     }
 
     private static string? GetText(CsvDataReader csv, int ordinal)
