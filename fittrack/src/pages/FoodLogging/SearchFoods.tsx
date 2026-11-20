@@ -98,9 +98,9 @@ const SearchFoods = ({
     });
   };
 
-  const handleSubmitFoodEntries = () => {
+  const submitEntries = (entries: DraftFoodItem[]) => {
     mutate(
-      { blockId, foodEntries, dateKey },
+      { blockId, foodEntries: entries, dateKey },
       {
         onSuccess: () => {
           setFoodEntries([]);
@@ -108,6 +108,10 @@ const SearchFoods = ({
         },
       },
     );
+  };
+
+  const handleSubmitFoodEntries = () => {
+    submitEntries(foodEntries);
   };
 
   if (camera) {
@@ -339,18 +343,38 @@ const SearchFoods = ({
             <p className="text-xs tabular-nums text-muted-foreground">{hint}</p>
           )}
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-5">
+          <div className="flex gap-3">
+            <Button
+              size={"lg"}
+              className="flex-1"
+              disabled={!isValidGrams}
+              onClick={handleConfirm}
+            >
+              <Check /> Add to list
+            </Button>
+            <Button size={"lg"} variant="outline" onClick={handleCancel}>
+              <X />
+              Cancel
+            </Button>
+          </div>
           <Button
+            disabled={isPending || !isValidGrams}
+            onClick={() => {
+              if (!isValidGrams) return;
+              const next = [
+                ...foodEntries,
+                { localId: crypto.randomUUID(), quantity: grams, food },
+              ];
+              setFoodEntries(next);
+              setFood(null);
+              setquery("");
+              submitEntries(next);
+            }}
             size={"lg"}
-            className="flex-1"
-            disabled={!isValidGrams}
-            onClick={handleConfirm}
+            variant={"secondary"}
           >
-            <Check /> Confirm
-          </Button>
-          <Button size={"lg"} variant="outline" onClick={handleCancel}>
-            <X />
-            Cancel
+            {isPending ? "Adding…" : `Add ${foodEntries.length + 1} to meal`}
           </Button>
         </div>
       </CardContent>
