@@ -7,7 +7,7 @@ const MACRO_LABELS = [
 ] as const;
 
 export const MacroView = ({ macros }: { macros: Macros }) => (
-  <div className="grid grid-cols-4 items-center gap-x-3 text-sm tabular-nums">
+  <div className="flex items-center gap-x-4 text-sm tabular-nums">
     {MACRO_LABELS.map(({ key, label, short }) => (
       <span
         key={key}
@@ -31,7 +31,7 @@ export const MacroView = ({ macros }: { macros: Macros }) => (
 // Thin proportional bar: how the meal splits between carbs / protein / fat.
 export const MacroBar = ({ macros }: { macros: Macros }) => {
   const total = macros.carbs + macros.protein + macros.fat;
-  if (total === 0) return <div className="h-1.5 bg-muted" />;
+  if (total === 0) return null;
 
   return (
     <div

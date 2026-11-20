@@ -66,7 +66,7 @@ export const MealBlock = ({
 
       <MacroBar macros={macros} />
 
-      {items.length > 0 ? (
+      {items.length > 0 && (
         <ul className="flex flex-col divide-y border bg-muted/50">
           {items.map((item) => (
             <FoodEntryRow
@@ -76,10 +76,6 @@ export const MealBlock = ({
             />
           ))}
         </ul>
-      ) : (
-        <p className="border border-dashed p-4 text-center text-sm text-muted-foreground">
-          Nothing logged for {name.toLowerCase()} yet.
-        </p>
       )}
 
       <Button
