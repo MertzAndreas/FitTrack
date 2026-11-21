@@ -2,7 +2,6 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/toast";
 import type { Food } from "../food";
 import { useBarcode } from "../use-food-logging";
 

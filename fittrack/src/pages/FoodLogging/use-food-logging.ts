@@ -26,7 +26,6 @@ export const useSearchFood = (query: string) =>
       }),
   });
 
-
 export const useBarcode = () =>
   useMutation({
     mutationFn: (code: string) =>
@@ -82,6 +81,34 @@ export const useDeleteFoodEntry = () => {
     onError: (error) => {
       toast.add({
         title: "Could not delete food entry",
+        description:
+          error instanceof Error ? error.message : "Something went wrong.",
+        type: "error",
+      });
+    },
+  });
+};
+
+export const useUpdateFoodEntry = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      entryId,
+      quantity,
+    }: {
+      entryId: number;
+      quantity: number;
+      dateKey: string;
+    }) => api.patch<void>(`/food-log/entries/${entryId}`, { quantity }),
+    onSuccess: (_, { dateKey }) => {
+      void queryClient.invalidateQueries({
+        queryKey: [dayBlockQueryKey, dateKey],
+      });
+    },
+    onError: (error) => {
+      toast.add({
+        title: "Could not update food entry",
         description:
           error instanceof Error ? error.message : "Something went wrong.",
         type: "error",

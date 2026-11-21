@@ -21,12 +21,14 @@ import { MacroBar, MacroView } from "./MacroView";
 type MealBlockProps = {
   block: Block;
   onAddFood?: () => void;
+  onEditEntry?: (entry: FoodItem) => void;
   onDeleteEntry?: (entry: FoodItem) => void;
 };
 
 export const MealBlock = ({
   block,
   onAddFood,
+  onEditEntry,
   onDeleteEntry,
 }: MealBlockProps) => {
   const { name, entries: items, iconKey } = block;
@@ -72,6 +74,7 @@ export const MealBlock = ({
             <FoodEntryRow
               key={item.id}
               item={item}
+              onEdit={onEditEntry ? () => onEditEntry(item) : undefined}
               onDelete={() => onDeleteEntry?.(item)}
             />
           ))}

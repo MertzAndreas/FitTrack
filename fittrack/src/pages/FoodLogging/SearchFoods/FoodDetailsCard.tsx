@@ -1,4 +1,4 @@
-import { Check, Pencil, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ type Unit = "g" | "serving";
 
 type FoodDetailsCardProps = {
   food: Food;
-  draftCount: number;
+  initialGrams?: number;
+  mealCount: number;
   isSubmitting: boolean;
   onConfirm: (quantity: number, submit: boolean) => void;
   onCancel: () => void;
@@ -28,14 +29,20 @@ const round = (value: number) => Math.round(value * 100) / 100;
 
 export const FoodDetailsCard = ({
   food,
-  draftCount,
+  initialGrams,
+  mealCount,
   isSubmitting,
   onConfirm,
   onCancel,
 }: FoodDetailsCardProps) => {
   const serving = getServingInfo(food);
-  const [unit, setUnit] = useState<Unit>(serving ? "serving" : "g");
-  const [amount, setAmount] = useState<number>(serving ? 1 : 100);
+  const isEditing = initialGrams !== undefined;
+  const [unit, setUnit] = useState<Unit>(
+    isEditing ? "g" : serving ? "serving" : "g",
+  );
+  const [amount, setAmount] = useState<number>(
+    isEditing ? initialGrams : serving ? 1 : 100,
+  );
 
   const grams = unit === "serving" && serving ? amount * serving.grams : amount;
   const safeGrams = Number.isFinite(grams) ? grams : 0;
@@ -64,7 +71,7 @@ export const FoodDetailsCard = ({
 
   return (
     <>
-      <CardHeader className="grid-cols-[auto_1fr_auto] items-center gap-4">
+      <CardHeader className="grid-cols-[auto_1fr] items-center gap-4">
         <ImageBox className="size-24" img={food.img} alt={food.name} />
         <div className="min-w-0 space-y-1">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -77,9 +84,6 @@ export const FoodDetailsCard = ({
             <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
           )}
         </div>
-        <Button variant="secondary" className="size-24" aria-label="Edit food">
-          <Pencil className="size-6" />
-        </Button>
       </CardHeader>
       <CardContent className="space-y-6">
         <MacroTiles macros={macros} />
@@ -119,7 +123,8 @@ export const FoodDetailsCard = ({
                 setAmount(Number.isFinite(next) ? Math.max(0, next) : 0);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && isValid) onConfirm(safeGrams, false);
+                if (e.key === "Enter" && isValid && !isSubmitting)
+                  onConfirm(safeGrams, false);
               }}
               className="h-14 pr-28 text-3xl font-semibold tabular-nums"
             />
@@ -136,24 +141,26 @@ export const FoodDetailsCard = ({
             <Button
               size="lg"
               className="flex-1"
-              disabled={!isValid}
+              disabled={isSubmitting || !isValid}
               onClick={() => onConfirm(safeGrams, false)}
             >
-              <Check /> Add to list
+              <Check /> {isEditing ? "Save changes" : "Add to list"}
             </Button>
             <Button size="lg" variant="outline" onClick={onCancel}>
               <X />
               Cancel
             </Button>
           </div>
-          <Button
-            disabled={isSubmitting || !isValid}
-            onClick={() => onConfirm(safeGrams, true)}
-            size="lg"
-            variant="secondary"
-          >
-            {isSubmitting ? "Adding…" : `Add ${draftCount + 1} to meal`}
-          </Button>
+          {mealCount > 0 && (
+            <Button
+              disabled={isSubmitting || !isValid}
+              onClick={() => onConfirm(safeGrams, true)}
+              size="lg"
+              variant="secondary"
+            >
+              {isSubmitting ? "Adding…" : `Add ${mealCount} to meal`}
+            </Button>
+          )}
         </div>
       </CardContent>
     </>

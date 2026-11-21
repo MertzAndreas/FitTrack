@@ -7,6 +7,7 @@ import { FoodEntryRow } from "../FoodEntryRow";
 
 type DraftsSectionProps = {
   entries: DraftFoodItem[];
+  onEdit: (localId: string) => void;
   onRemove: (localId: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -14,6 +15,7 @@ type DraftsSectionProps = {
 
 export const DraftsSection = ({
   entries,
+  onEdit,
   onRemove,
   onSubmit,
   isSubmitting,
@@ -28,6 +30,7 @@ export const DraftsSection = ({
           <FoodEntryRow
             key={entry.localId}
             item={entry}
+            onEdit={() => onEdit(entry.localId)}
             onDelete={() => onRemove(entry.localId)}
           />
         ))}
