@@ -14,6 +14,8 @@ public record FoodEntryDto(int Id, double Quantity, FoodDto Food);
 
 public record PostEntryDto(int FoodId, double Quantity);
 
+public record UpdateEntryDto(double Quantity);
+
 public record PostFoodDto(
     string Name,
     string? Brands,

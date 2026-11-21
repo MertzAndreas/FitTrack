@@ -47,6 +47,24 @@ public static class FoodEndpoints
             }
         );
 
+        log.MapPatch(
+            "/entries/{id}",
+            async (int id, UpdateEntryDto update, AppDbContext db, CancellationToken ct) =>
+            {
+                if (!double.IsFinite(update.Quantity) || update.Quantity <= 0)
+                    return Results.BadRequest("Quantity must be greater than zero.");
+
+                var foodEntry = await db.FoodEntries.FirstOrDefaultAsync(fe => fe.Id == id, ct);
+
+                if (foodEntry is null)
+                    return Results.NotFound();
+
+                foodEntry.QuantityGrams = update.Quantity;
+                await db.SaveChangesAsync(ct);
+                return Results.NoContent();
+            }
+        );
+
         log.MapPost(
             "/blocks/{blockId}/entries",
             async (int blockId, PostEntryDto[] entries, AppDbContext db, CancellationToken ct) =>

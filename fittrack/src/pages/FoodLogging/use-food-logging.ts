@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
-import type { Block, Food } from "./food";
-import type { DraftFoodItem } from "./SearchFoods";
+import type { Block, DraftFoodItem, Food } from "./food";
 
 export const dayBlockQueryKey = "blocks" as const;
 const foodSearch = "food-search" as const;
@@ -26,7 +25,6 @@ export const useSearchFood = (query: string) =>
         params: { q: query.trim(), limit: 5 },
       }),
   });
-
 
 export const useBarcode = () =>
   useMutation({
@@ -83,6 +81,34 @@ export const useDeleteFoodEntry = () => {
     onError: (error) => {
       toast.add({
         title: "Could not delete food entry",
+        description:
+          error instanceof Error ? error.message : "Something went wrong.",
+        type: "error",
+      });
+    },
+  });
+};
+
+export const useUpdateFoodEntry = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      entryId,
+      quantity,
+    }: {
+      entryId: number;
+      quantity: number;
+      dateKey: string;
+    }) => api.patch<void>(`/food-log/entries/${entryId}`, { quantity }),
+    onSuccess: (_, { dateKey }) => {
+      void queryClient.invalidateQueries({
+        queryKey: [dayBlockQueryKey, dateKey],
+      });
+    },
+    onError: (error) => {
+      toast.add({
+        title: "Could not update food entry",
         description:
           error instanceof Error ? error.message : "Something went wrong.",
         type: "error",

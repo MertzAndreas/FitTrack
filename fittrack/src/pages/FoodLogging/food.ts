@@ -14,6 +14,12 @@ export const MACRO_COLORS: Record<MacroName, string> = {
   Fat: "var(--vivid-3)",
 };
 
+export const MACRO_LABELS = [
+  { key: "carbs", label: "Carbs", short: "C" },
+  { key: "protein", label: "Protein", short: "P" },
+  { key: "fat", label: "Fat", short: "F" },
+] as const;
+
 export function getServingInfo(food: Food) {
   const grams = food.servingQuantity;
   if (typeof grams !== "number" || !Number.isFinite(grams) || grams <= 0) {
@@ -57,6 +63,8 @@ export type FoodItem = {
   quantity: number;
   food: Food;
 };
+
+export type DraftFoodItem = Omit<FoodItem, "id"> & { localId: string };
 
 export type Block = {
   id: number;
