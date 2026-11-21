@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
-import type { Block, Food } from "./food";
-import type { DraftFoodItem } from "./SearchFoods";
+import type { Block, DraftFoodItem, Food } from "./food";
 
 export const dayBlockQueryKey = "blocks" as const;
 const foodSearch = "food-search" as const;

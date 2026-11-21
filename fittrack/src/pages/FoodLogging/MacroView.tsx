@@ -1,10 +1,4 @@
-import { MACRO_COLORS, type Macros } from "./food";
-
-const MACRO_LABELS = [
-  { key: "carbs", label: "Carbs", short: "C" },
-  { key: "protein", label: "Protein", short: "P" },
-  { key: "fat", label: "Fat", short: "F" },
-] as const;
+import { MACRO_COLORS, MACRO_LABELS, type Macros } from "./food";
 
 export const MacroView = ({ macros }: { macros: Macros }) => (
   <div className="grid grid-cols-4 items-center gap-x-3 text-sm tabular-nums">
