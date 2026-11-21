@@ -6,11 +6,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  calculateItemMacros,
-  getServingInfo,
-  type Food,
-} from "../food";
+import { calculateItemMacros, getServingInfo, type Food } from "../food";
 import { ImageBox } from "../ImageBox";
 import { MacroTiles } from "./MacroTiles";
 
@@ -40,30 +36,34 @@ export const FoodDetailsCard = ({
   const [unit, setUnit] = useState<Unit>(
     isEditing ? "g" : serving ? "serving" : "g",
   );
-  const [amount, setAmount] = useState<number>(
-    isEditing ? initialGrams : serving ? 1 : 100,
+  const [amountInput, setAmountInput] = useState<string>(() =>
+    String(isEditing ? initialGrams : serving ? 1 : 100),
   );
 
-  const grams = unit === "serving" && serving ? amount * serving.grams : amount;
-  const safeGrams = Number.isFinite(grams) ? grams : 0;
-  const isValid = safeGrams >= 0.1;
-  const macros = calculateItemMacros({ food, quantity: safeGrams });
+  const parsed = Number(amountInput);
+  const amount = Number.isFinite(parsed) ? parsed : 0;
+  const grams = Math.max(
+    0,
+    unit === "serving" && serving ? amount * serving.grams : amount,
+  );
+  const isValid = grams >= 0.1;
 
   const changeUnit = (next: Unit) => {
     if (next === unit) return;
-    if (serving) {
-      setAmount((prev) =>
-        round(next === "serving" ? prev / serving.grams : prev * serving.grams),
+    if (serving && isValid) {
+      setAmountInput(
+        String(round(next === "serving" ? grams / serving.grams : grams)),
       );
     }
     setUnit(next);
   };
 
-  const hint = serving
-    ? unit === "serving"
-      ? `${round(amount)} × ${serving.label} = ${round(safeGrams)} g`
-      : `= ${round(safeGrams / serving.grams)} servings`
-    : null;
+  const hint =
+    serving && isValid
+      ? unit === "serving"
+        ? `${round(grams / serving.grams)} × ${serving.label} = ${round(grams)} g`
+        : `= ${round(grams / serving.grams)} servings`
+      : null;
 
   const subtitle = [food.brands, serving && `Serving: ${serving.label}`]
     .filter(Boolean)
@@ -86,7 +86,7 @@ export const FoodDetailsCard = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <MacroTiles macros={macros} />
+        <MacroTiles macros={calculateItemMacros({ food, quantity: grams })} />
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
             <Label htmlFor="select-amount">Amount</Label>
@@ -116,15 +116,12 @@ export const FoodDetailsCard = ({
               id="select-amount"
               type="number"
               step="any"
-              aria-invalid={!isValid}
-              value={amount}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setAmount(Number.isFinite(next) ? Math.max(0, next) : 0);
-              }}
+              aria-invalid={amountInput.trim() !== "" && !isValid}
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && isValid && !isSubmitting)
-                  onConfirm(safeGrams, false);
+                  onConfirm(grams, false);
               }}
               className="h-14 pr-28 text-3xl font-semibold tabular-nums"
             />
@@ -142,7 +139,7 @@ export const FoodDetailsCard = ({
               size="lg"
               className="flex-1"
               disabled={isSubmitting || !isValid}
-              onClick={() => onConfirm(safeGrams, false)}
+              onClick={() => onConfirm(grams, false)}
             >
               <Check /> {isEditing ? "Save changes" : "Add to list"}
             </Button>
@@ -154,7 +151,7 @@ export const FoodDetailsCard = ({
           {mealCount > 0 && (
             <Button
               disabled={isSubmitting || !isValid}
-              onClick={() => onConfirm(safeGrams, true)}
+              onClick={() => onConfirm(grams, true)}
               size="lg"
               variant="secondary"
             >
